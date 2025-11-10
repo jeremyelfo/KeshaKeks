@@ -702,6 +702,13 @@
 
     </div>
 
+    <!-- Debug Console -->
+    <div id="debugConsole" style="position:fixed;bottom:60px;left:10px;right:10px;max-height:200px;background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:8px;overflow-y:auto;z-index:9999;display:none;">
+        <button onclick="document.getElementById('debugConsole').style.display='none'" style="position:absolute;top:5px;right:5px;background:#f00;color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;">✕</button>
+        <div id="debugLog"></div>
+    </div>
+    <button onclick="document.getElementById('debugConsole').style.display='block'" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.7);color:#0f0;border:2px solid #0f0;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer;z-index:9998;">🐛</button>
+
 
 
     <audio id="backgroundMusic" loop preload="auto">
@@ -719,10 +726,32 @@
 
         tg.expand();
 
+        // Debug logger
+        function debugLog(msg) {
+            const log = document.getElementById('debugLog');
+            if (log) {
+                const time = new Date().toLocaleTimeString();
+                const entry = document.createElement('div');
+                entry.textContent = `[${time}] ${msg}`;
+                entry.style.marginBottom = '4px';
+                entry.style.borderBottom = '1px solid #333';
+                log.appendChild(entry);
+                log.scrollTop = log.scrollHeight;
+                // Ограничиваем 100 сообщениями
+                if (log.children.length > 100) log.removeChild(log.firstChild);
+            }
+            console.log(msg);
+        }
+
         // Блокируем ввод до закрытия приветственной модалки
         let inputLocked = true;
 
+        debugLog('App started');
+
         document.addEventListener('DOMContentLoaded', () => {
+            debugLog('DOM loaded');
+            debugLog(`Telegram user: ${tg.initDataUnsafe?.user?.id || 'NONE'}`);
+            debugLog(`initData present: ${!!tg.initData}`);
             try { decideWelcomeModal(); } catch (_) {}
             try { loadServerProgress().then(() => { try { restoreAchievementGridFromScore(); } catch(_){} }); } catch (_) {}
         });
@@ -737,12 +766,12 @@
             const supabaseUrl = 'https://aduxktmwnrilsbpydhye.supabase.co';
             const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkdXhrdG13bnJpbHNicHlkaHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3ODc2MzYsImV4cCI6MjA3ODM2MzYzNn0.MBj-HLDcqu2PHkbJp7ZfvWf2GsX_83-ZFny3YI5uRbU';
             
-            console.log('[Supabase Init] Начало инициализации Supabase');
+            debugLog('Supabase init started');
             
             // Проверяем наличие Supabase SDK
             if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
                 supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-                console.log('[Supabase Init] Supabase клиент успешно инициализирован');
+                debugLog('Supabase client created');
                 
                 // Тестовый запрос для проверки подключения
                 supabaseClient.from('leaderboard').select('count', { count: 'exact', head: true })
@@ -1555,17 +1584,18 @@
             const now = Date.now();
             if (now - lastSaveTime >= SAVE_INTERVAL) {
                 lastSaveTime = now;
+                debugLog(`Save triggered: score=${score}, runScore=${runScore}`);
                 const user = tg.initDataUnsafe?.user;
                 if (user && supabaseClient) {
                     updateScores(user.id, user.username || 'anon', runScore, score).catch(err => {
-                        console.error('[clickCat] Ошибка при сохранении счета:', err);
+                        debugLog(`Save error: ${err.message}`);
                     });
                 } else {
                     if (!user) {
-                        console.warn('[clickCat] Пользователь Telegram не найден');
+                        debugLog('ERROR: Нет Telegram user');
                     }
                     if (!supabaseClient) {
-                        console.warn('[clickCat] Supabase клиент не инициализирован');
+                        debugLog('ERROR: Нет Supabase client');
                     }
                 }
             }
@@ -1841,23 +1871,23 @@
 
         // Обновление счётов на сервере через Edge Function
         async function updateScores(telegramId, username, runVal, totalVal) {
-            console.log('[updateScores] Вызов функции:', { telegramId, username, runVal, totalVal });
+            debugLog(`updateScores: run=${runVal} total=${totalVal}`);
             
             if (!supabaseClient) { 
-                console.warn('[updateScores] Supabase не инициализирован'); 
+                debugLog('ERROR: Supabase не инициализирован'); 
                 return; 
             }
             
             const storedName = (getStoredDisplayName() || '').trim();
-            console.log('[updateScores] storedName:', storedName);
+            debugLog(`storedName: ${storedName}`);
             
             try {
                 // Получаем initData от Telegram
                 const initData = tg.initData || '';
-                console.log('[updateScores] initData length:', initData.length);
+                debugLog(`initData length: ${initData.length}`);
                 
                 if (!initData) {
-                    console.warn('[updateScores] Нет Telegram initData');
+                    debugLog('ERROR: Нет Telegram initData');
                     return;
                 }
 
@@ -1867,7 +1897,7 @@
                     totalScore: totalVal,
                     displayName: storedName
                 };
-                console.log('[updateScores] Отправка в Edge Function:', payload);
+                debugLog(`Sending to Edge Function...`);
 
                 // Вызываем Edge Function
                 const { data, error } = await supabaseClient.functions.invoke('update_scores', {
@@ -1875,14 +1905,12 @@
                 });
 
                 if (error) {
-                    console.error('[updateScores] Edge Function error:', error);
-                    console.error('[updateScores] Error details:', JSON.stringify(error));
+                    debugLog(`ERROR Edge Function: ${JSON.stringify(error)}`);
                 } else {
-                    console.log('[updateScores] Edge Function success:', data);
+                    debugLog(`SUCCESS: ${JSON.stringify(data)}`);
                 }
             } catch (e) {
-                console.error('[updateScores] catch:', e);
-                console.error('[updateScores] catch stack:', e.stack);
+                debugLog(`EXCEPTION: ${e.message}`);
             }
         }
         async function decideWelcomeModal(){
