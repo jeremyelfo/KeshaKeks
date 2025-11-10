@@ -1,677 +1,667 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Кеша и Кекс снимают стресс!</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* Новая переменная для продолжительности анимаций (6 секунд) */
-            --celebration-duration: 6s;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Кеша и Кекс снимают стресс!</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Новая переменная для продолжительности анимаций (6 секунд) */
+            --celebration-duration: 6s;
+        }
 
-        body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-            text-align: center;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-            color: #e0e0e0;
-            padding: 0;
-            margin: 0;
-            min-height: 100vh;
-            position: relative;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
 
-        /* --- НОВЫЕ БЛОКИ ДЛЯ ВЕРХА СТРАНИЦЫ --- */
-        .top-fixed-elements {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            /* Учитываем Telegram header + немного отступа */
-            padding-top: calc(env(safe-area-inset-top, 20px) + 10px); 
-            z-index: 1000;
-        }
+        /* --- НОВЫЕ БЛОКИ ДЛЯ ВЕРХА СТРАНИЦЫ --- */
+        .top-fixed-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            /* Учитываем Telegram header + немного отступа */
+            padding-top: calc(env(safe-area-inset-top, 20px) + 5px); /* Скорректировано */
+            z-index: 1000;
+        }
 
-        .telegram-buttons {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 95%;
-            margin: 0 auto;
-        }
+        /* .telegram-buttons удалены */
 
-        .achievement-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 колонки для ачивок */
-            gap: 5px;
-            padding: 10px 10px 0;
-            max-width: 350px;
-            margin: 10px auto;
-        }
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 колонки для ачивок */
+            gap: 5px;
+            padding: 10px 10px 0;
+            max-width: 350px;
+            margin: 10px auto;
+        }
 
-        .achievement-slot {
-            height: 40px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #b0b0b0;
-            font-size: 10px;
-            overflow: hidden;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
+        .achievement-slot {
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b0b0b0;
+            font-size: 10px;
+            overflow: hidden;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
 
-        .achievement-slot.unlocked {
-            background: linear-gradient(45deg, #4CAF50 0%, #8BC34A 100%);
-            color: #ffffff;
-            font-weight: 700;
-            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
+        .achievement-slot.unlocked {
+            background: linear-gradient(45deg, #4CAF50 0%, #8BC34A 100%);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
 
-        /* Кнопки Telegram */
-        .tg-btn {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #e0e0e0;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
+        /* Кнопки Telegram (стили сохранены на случай, если они используются в других местах) */
+        .tg-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e0e0e0;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
 
-        .tg-btn:active {
-            transform: scale(0.95);
-        }
+        .tg-btn:active {
+            transform: scale(0.95);
+        }
 
-        /* --- СДВИГ КОНТЕНТА ВНИЗ --- */
-        .content-wrapper {
-            /* Опускаем контент ниже заголовка и нового блока ачивок */
-            padding-top: calc(env(safe-area-inset-top, 100px) + 150px);
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-            max-width: 90%;
-            margin: 0 auto;
-        }
+        /* --- СДВИГ КОНТЕНТА ВНИЗ --- */
+        .content-wrapper {
+            /* СКОРРЕКТИРОВАНО: Оставляем отступ, достаточный для компенсации удаленных кнопок + ачивок */
+            padding-top: calc(env(safe-area-inset-top, 20px) + 100px); 
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            max-width: 90%;
+            margin: 0 auto;
+        }
 
-        /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
-        .tap-zone {
-            display: block;
-            width: 100vw; /* Ширина на весь экран */
-            height: 40vh; /* Высота на 40% от высоты видимой части экрана */
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            /* Растягиваем на всю доступную область */
-            min-height: calc(50vh - 100px); 
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            z-index: 10;
-            margin: 0;
-            padding: 0;
-        }
+        /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
+        .tap-zone {
+            display: block;
+            width: 100vw; /* Ширина на весь экран */
+            height: 40vh; /* Высота на 40% от высоты видимой части экрана */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            /* Растягиваем на всю доступную область */
+            min-height: calc(50vh - 100px); 
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+            margin: 0;
+            padding: 0;
+        }
 
-        /* --- СТИЛИ ОСТАЛИСЬ В ОСНОВНОМ ТЕ ЖЕ, НО НЕМНОГО ОЧИЩЕНЫ --- */
+        /* --- СТИЛИ ОСТАЛИСЬ В ОСНОВНОМ ТЕ ЖЕ, НО НЕМНОГО ОЧИЩЕНЫ --- */
 
-        .cat-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            gap: 20px;
-            position: relative;
-            z-index: 20; /* Котики над тач-зоной */
-        }
+        .cat-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            gap: 20px;
+            position: relative;
+            z-index: 20; /* Котики над тач-зоной */
+        }
 
-        .cat {
-            width: 150px;
-            height: 150px;
-            cursor: pointer;
-            border-radius: 20px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
-            touch-action: manipulation;
-        }
+        .cat {
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            touch-action: manipulation;
+        }
 
-        .cat:active {
-            transform: scale(0.98);
-        }
+        .cat:active {
+            transform: scale(0.98);
+        }
 
-        h1 {
-            color: #ffffff;
-            font-size: 22px;
-            font-weight: 600;
-            margin: 0 0 10px 0; /* Уменьшаем отступ сверху, чтобы было больше места для ачивок */
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
+        h1 {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 10px 0; /* Уменьшаем отступ сверху, чтобы было больше места для ачивок */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
 
-        p {
-            color: #b0b0b0;
-            font-size: 14px;
-            margin-top: 5px; /* Уменьшаем отступ для более компактного вида */
-            margin-bottom: 5px;
-        }
+        p {
+            color: #b0b0b0;
+            font-size: 14px;
+            margin-top: 5px; /* Уменьшаем отступ для более компактного вида */
+            margin-bottom: 5px;
+        }
 
-        /* Ачивка-уведомление (оставлена, но с новым текстом) */
-        .achievement {
-            position: fixed;
-            bottom: 5%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            color: #ffffff;
-            padding: 15px 25px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: none;
-            pointer-events: none;
-        }
-        .achievement.show {
-            opacity: 1;
-            display: block;
-            animation: bounceUp 0.5s ease;
-        }
+        /* Ачивка-уведомление (оставлена, но с новым текстом) */
+        .achievement {
+            position: fixed;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: none;
+            pointer-events: none;
+        }
+        .achievement.show {
+            opacity: 1;
+            display: block;
+            animation: bounceUp 0.5s ease;
+        }
 
 
-        /* Анимация мигания для супер-эффекта */
-        /* УВЕЛИЧЕНО КОЛИЧЕСТВО МИГАНИЙ */
-        @keyframes flash-strong {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
-        }
+        /* Анимация мигания для супер-эффекта */
+        /* УВЕЛИЧЕНО КОЛИЧЕСТВО МИГАНИЙ */
+        @keyframes flash-strong {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
 
-        /* УВЕЛИЧЕНА КОНТРАСТНОСТЬ ЦВЕТОВ МИГАНИЯ */
-        @keyframes blink-strong {
-            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
-            50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
-        }
-        
-        /* Прочие стили... */
-        .heart {
-            position: absolute;
-            font-size: 24px;
-            color: #ff69b4;
-            pointer-events: none;
-            z-index: 100;
-            animation: floatUp 1s ease-out forwards;
-            transform-origin: center;
-        }
-        .celebration-particle {
-             animation-duration: var(--celebration-duration);
-        }
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) translateX(0) rotate(0deg) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
-            }
-        }
-        @keyframes bounceUp {
-            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(10px); }
-            60% { transform: translateX(-50%) translateY(5px); }
-        }
-    </style>
+        /* УВЕЛИЧЕНА КОНТРАСТНОСТЬ ЦВЕТОВ МИГАНИЯ */
+        @keyframes blink-strong {
+            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
+            50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
+        }
+        
+        /* Прочие стили... */
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            color: #ff69b4;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 1s ease-out forwards;
+            transform-origin: center;
+        }
+        .celebration-particle {
+             animation-duration: var(--celebration-duration);
+        }
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
+            }
+        }
+        @keyframes bounceUp {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(10px); }
+            60% { transform: translateX(-50%) translateY(5px); }
+        }
+    </style>
 </head>
 <body>
-    <div class="top-fixed-elements">
-        <div class="telegram-buttons">
-            <div class="tg-btn" onclick="showLeaderboard()">🏆</div>
-            <div class="tg-btn" onclick="tg.openLink('https://t.me/your_channel_link')">📢</div>
-        </div>
-        <div class="achievement-grid" id="achievementGrid">
-            <div id="ach-slot-1" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">100 🐾</div>
-            <div id="ach-slot-2" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">200 ✨</div>
-            <div id="ach-slot-3" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">500 🌟</div>
-            <div id="ach-slot-4" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">1K 😻</div>
-            <div id="ach-slot-5" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">2K 💖</div>
-            <div id="ach-slot-6" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">5K 🎉</div>
-        </div>
-    </div>
+    <div class="top-fixed-elements">
+                <div class="achievement-grid" id="achievementGrid">
+            <div id="ach-slot-1" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">100 🐾</div>
+            <div id="ach-slot-2" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">200 ✨</div>
+            <div id="ach-slot-3" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">500 🌟</div>
+            <div id="ach-slot-4" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">1K 😻</div>
+            <div id="ach-slot-5" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">2K 💖</div>
+            <div id="ach-slot-6" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">5K 🎉</div>
+        </div>
+    </div>
 
-    <div id="welcomeModal" class="modal">
-        <div class="modal-content">
-            <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
-            <button class="close-btn" onclick="closeModal()">Начать терапию!</button>
-        </div>
-    </div>
+    <div id="welcomeModal" class="modal">
+        <div class="modal-content">
+            <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
+            <button class="close-btn" onclick="closeModal()">Начать терапию!</button>
+        </div>
+    </div>
 
-    <div class="content-wrapper">
-        <h1>Кеша и Кекс снимают стресс!❤️</h1>
-        <div class="cat-container" id="catContainer">
-            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)">
-            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
-        </div>
-        <div id="score">Очки уюта: 0</div>
-        <button onclick="showLeaderboard()">🏆 Показать топ</button>
-        <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
-    </div>
+    <div class="content-wrapper">
+        <h1>Кеша и Кекс снимают стресс!❤️</h1>
+        <div class="cat-container" id="catContainer">
+            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)">
+            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
+        </div>
+        <div id="score">Очки уюта: 0</div>
+        <button onclick="showLeaderboard()">🏆 Показать топ</button>
+        <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
+    </div>
 
-    <button id="tapZone" class="tap-zone" aria-label="Большая кнопка для тапов"></button>
+    <button id="tapZone" class="tap-zone" aria-label="Большая кнопка для тапов"></button>
 
-    <div id="achievement" class="achievement">
-        <span id="ach-text"></span> 🏆
-    </div>
+    <div id="achievement" class="achievement">
+        <span id="ach-text"></span> 🏆
+    </div>
 
-    <audio id="backgroundMusic" loop autoplay>
-        <source src="mur.mp3" type="audio/mpeg">
-        Ваш браузер не поддерживает аудио.
-    </audio>
+    <audio id="backgroundMusic" loop autoplay>
+        <source src="mur.mp3" type="audio/mpeg">
+        Ваш браузер не поддерживает аудио.
+    </audio>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-        let score = 0;
-        let cat1Index = 0;
-        let cat2Index = 0;
-        const CELEBRATION_DURATION_MS = 6000;
+        let score = 0;
+        let cat1Index = 0;
+        let cat2Index = 0;
+        const CELEBRATION_DURATION_MS = 6000;
 
-        // Массивы с фото (оставлены без изменений)
-        const cat1Photos = [
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2556.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2546.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2548.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2557.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_9_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_6_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_4_2025-11-10_17-01-48.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_3_2025-11-10_17-01-48.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_3_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_2_2025-11-10_17-01-48.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_2_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_23_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_22_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_1_2025-11-10_17-01-48.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_17_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_16_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_14_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_11_2025-11-10_16-54-08.jpg"
-        ];
-        const cat2Photos = [
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2552.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2549.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2555.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Rerks_6_2025-11-10_17-01-48.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_8_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_7_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_5_2025-11-10_17-01-48.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_5_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_4_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_24_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_21_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_1_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_19_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_18_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_15_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_13_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_12_2025-11-10_16-54-08.jpg",
-            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_10_2025-11-10_16-54-08.jpg"
-        ];
+        // Массивы с фото (оставлены без изменений)
+        const cat1Photos = [
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2556.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2546.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2548.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2557.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_9_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_6_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_4_2025-11-10_17-01-48.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_3_2025-11-10_17-01-48.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_3_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_2_2025-11-10_17-01-48.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_2_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_23_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_22_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_1_2025-11-10_17-01-48.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_17_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_16_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_14_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_11_2025-11-10_16-54-08.jpg"
+        ];
+        const cat2Photos = [
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2552.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2549.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2555.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Rerks_6_2025-11-10_17-01-48.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_8_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_7_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_5_2025-11-10_17-01-48.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_5_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_4_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_24_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_21_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_1_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_19_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_18_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_15_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_13_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_12_2025-11-10_16-54-08.jpg",
+            "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_10_2025-11-10_16-54-08.jpg"
+        ];
 
-        // --- Управление порогами для ачивок и празднований (СКОРРЕКТИРОВАНО) ---
+        // --- Управление порогами для ачивок и празднований (СКОРРЕКТИРОВАНО) ---
 
-        const achievementThresholds = [1, 50];
-        for (let i = 1; i <= 10000000; i++) {
-            achievementThresholds.push(i * 100);
-            achievementThresholds.push(i * 100 + 50);
-        }
-        
-        // Мамми/Паппи (УДАЛЕНО)
-        const specialThresholds = []; 
+        const achievementThresholds = [1, 50];
+        for (let i = 1; i <= 10000000; i++) {
+            achievementThresholds.push(i * 100);
+            achievementThresholds.push(i * 100 + 50);
+        }
+        
+        // Мамми/Паппи (УДАЛЕНО)
+        const specialThresholds = []; 
 
-        const everyHundredThresholds = [];
-        for (let i = 1; i <= 10000000; i++) {
-            everyHundredThresholds.push(i * 100);
-        }
+        const everyHundredThresholds = [];
+        for (let i = 1; i <= 10000000; i++) {
+            everyHundredThresholds.push(i * 100);
+        }
 
-        const milestoneThresholds = [];
-        for (let k = 0; k <= 999999; k++) {
-            const thresh = 500 + (k * 1000);
-            if (thresh <= 1000000000) {
-                milestoneThresholds.push(thresh);
-            }
-        }
+        const milestoneThresholds = [];
+        for (let k = 0; k <= 999999; k++) {
+            const thresh = 500 + (k * 1000);
+            if (thresh <= 1000000000) {
+                milestoneThresholds.push(thresh);
+            }
+        }
 
-        const superThresholds = [];
-        for (let i = 1; i <= 1000000; i++) {
-            superThresholds.push(i * 1000);
-        }
+        const superThresholds = [];
+        for (let i = 1; i <= 1000000; i++) {
+            superThresholds.push(i * 1000);
+        }
 
-        const unlockedAchievements = new Set();
-        const unlockedMilestones = new Set();
-        const unlockedSupers = new Set();
-        const achSlotMapping = { 100: 1, 200: 2, 500: 3, 1000: 4, 2000: 5, 5000: 6 }; // Для грида
+        const unlockedAchievements = new Set();
+        const unlockedMilestones = new Set();
+        const unlockedSupers = new Set();
+        const achSlotMapping = { 100: 1, 200: 2, 500: 3, 1000: 4, 2000: 5, 5000: 6 }; // Для грида
 
-        // --- Вспомогательные функции ---
+        // --- Вспомогательные функции ---
 
-        function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000, isCelebration = false) {
-            const particle = document.createElement('div');
-            particle.innerHTML = emoji;
-            particle.className = 'heart';
-            if (isCelebration) {
-                particle.classList.add('celebration-particle');
-            }
+        function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000, isCelebration = false) {
+            const particle = document.createElement('div');
+            particle.innerHTML = emoji;
+            particle.className = 'heart';
+            if (isCelebration) {
+                particle.classList.add('celebration-particle');
+            }
 
-            particle.style.left = x + 'px';
-            particle.style.top = y + 'px';
-            particle.style.color = color;
-            particle.style.fontSize = (24 + Math.random() * 12) + 'px';
-            particle.style.pointerEvents = 'none';
-            particle.style.zIndex = '100';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.color = color;
+            particle.style.fontSize = (24 + Math.random() * 12) + 'px';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '100';
 
-            const randX = (Math.random() - 0.5) * (isCelebration ? 400 : 80);
-            particle.style.setProperty('--rand-x', randX + 'px');
+            const randX = (Math.random() - 0.5) * (isCelebration ? 400 : 80);
+            particle.style.setProperty('--rand-x', randX + 'px');
 
-            const finalDuration = isCelebration ? duration : 1000;
-            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`;
+            const finalDuration = isCelebration ? duration : 1000;
+            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`;
 
-            container.appendChild(particle);
+            container.appendChild(particle);
 
-            setTimeout(() => {
-                particle.remove();
-            }, finalDuration);
-        }
+            setTimeout(() => {
+                particle.remove();
+            }, finalDuration);
+        }
 
-        function launchSalute() {
-            const numHearts = 50;
-            for (let i = 0; i < numHearts; i++) {
-                const x = Math.random() * window.innerWidth;
-                const y = Math.random() * window.innerHeight;
-                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body, CELEBRATION_DURATION_MS, true), i * 50);
-            }
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('heavy');
-            }
-        }
+        function launchSalute() {
+            const numHearts = 50;
+            for (let i = 0; i < numHearts; i++) {
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body, CELEBRATION_DURATION_MS, true), i * 50);
+            }
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+            }
+        }
 
-        // MILESTONE: Изменена анимация фона на более интенсивное мигание
-        function launchMilestone() {
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('heavy');
-                setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
-            }
+        // MILESTONE: Изменена анимация фона на более интенсивное мигание
+        function launchMilestone() {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+                setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
+            }
 
-            // 1. Анимация фона на 6 секунд, мигающая сильнее
-            document.body.style.animation = `blink-strong 0.5s ease-in-out infinite`; 
-            
-            // 2. Взрыв лапок и звёздочек
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            const numParticles = 30;
-            const emojis = ['🐾', '⭐', '✨', '🐱'];
-            const colors = ['#ffd700', '#00ff00', '#ff00ff', '#ffff00'];
-            for (let i = 0; i < numParticles; i++) {
-                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const delay = i * 30;
-                setTimeout(() => {
-                    const angle = (i / numParticles) * Math.PI * 2 + Math.random() * Math.PI/4;
-                    const dist = 200 + Math.random() * 200;
-                    const x = centerX + Math.cos(angle) * dist;
-                    const y = centerY + Math.sin(angle) * dist;
-                    createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true);
-                }, delay);
-            }
-            
-            // 3. Отмена анимации через 6 секунд
-            setTimeout(() => {
-                document.body.style.animation = '';
-            }, CELEBRATION_DURATION_MS);
-        }
+            // 1. Анимация фона на 6 секунд, мигающая сильнее
+            document.body.style.animation = `blink-strong 0.5s ease-in-out infinite`; 
+            
+            // 2. Взрыв лапок и звёздочек
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const numParticles = 30;
+            const emojis = ['🐾', '⭐', '✨', '🐱'];
+            const colors = ['#ffd700', '#00ff00', '#ff00ff', '#ffff00'];
+            for (let i = 0; i < numParticles; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const delay = i * 30;
+                setTimeout(() => {
+                    const angle = (i / numParticles) * Math.PI * 2 + Math.random() * Math.PI/4;
+                    const dist = 200 + Math.random() * 200;
+                    const x = centerX + Math.cos(angle) * dist;
+                    const y = centerY + Math.sin(angle) * dist;
+                    createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true);
+                }, delay);
+            }
+            
+            // 3. Отмена анимации через 6 секунд
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, CELEBRATION_DURATION_MS);
+        }
 
-        // SUPER: Использована новая, более сильная анимация flash-strong
-        function launchSuperEffect(threshold) {
-            if (unlockedSupers.has(threshold)) return;
-            unlockedSupers.add(threshold);
+        // SUPER: Использована новая, более сильная анимация flash-strong
+        function launchSuperEffect(threshold) {
+            if (unlockedSupers.has(threshold)) return;
+            unlockedSupers.add(threshold);
 
-            // 1. Массовый шторм эмодзи по всему экрану
-            const numParticles = 100;
-            const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
-            const superColors = ['#ff69b4', '#ffd700', '#00ff00', '#ff00ff', '#ffff00', '#ff1493', '#00bfff', '#ff4500'];
-            for (let i = 0; i < numParticles; i++) {
-                const emoji = superEmojis[Math.floor(Math.random() * superEmojis.length)];
-                const color = superColors[Math.floor(Math.random() * superColors.length)];
-                const x = Math.random() * window.innerWidth;
-                const y = Math.random() * window.innerHeight;
-                const delay = i * 20;
-                setTimeout(() => createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true), delay);
-            }
+            // 1. Массовый шторм эмодзи по всему экрану
+            const numParticles = 100;
+            const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
+            const superColors = ['#ff69b4', '#ffd700', '#00ff00', '#ff00ff', '#ffff00', '#ff1493', '#00bfff', '#ff4500'];
+            for (let i = 0; i < numParticles; i++) {
+                const emoji = superEmojis[Math.floor(Math.random() * superEmojis.length)];
+                const color = superColors[Math.floor(Math.random() * superColors.length)];
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                const delay = i * 20;
+                setTimeout(() => createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true), delay);
+            }
 
-            // 2. Сильное мигание котов (6 секунд)
-            const cats = document.querySelectorAll('.cat');
-            cats.forEach(cat => {
-                cat.style.animation = 'flash-strong 0.3s ease-in-out infinite'; // Более частое мигание
-                setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS);
-            });
-            
-            // 3. Радужный флеш фона с переходами (6 секунд)
-            const originalBg = document.body.style.background;
-            const flashes = [
-                'linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%)',
-                'linear-gradient(135deg, #ffd700 0%, #ffff00 50%, #ff4500 100%)',
-                'linear-gradient(135deg, #00ff00 0%, #00bfff 50%, #0000ff 100%)',
-                'linear-gradient(135deg, #ff00ff 0%, #8a2be2 50%, #4b0082 100%)'
-            ];
-            let flashIndex = 0;
-            const flashInterval = setInterval(() => {
-                document.body.style.background = flashes[flashIndex % flashes.length];
-                flashIndex++;
-            }, 200);
-            setTimeout(() => {
-                clearInterval(flashInterval);
-                document.body.style.background = originalBg;
-            }, CELEBRATION_DURATION_MS);
+            // 2. Сильное мигание котов (6 секунд)
+            const cats = document.querySelectorAll('.cat');
+            cats.forEach(cat => {
+                cat.style.animation = 'flash-strong 0.3s ease-in-out infinite'; // Более частое мигание
+                setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS);
+            });
+            
+            // 3. Радужный флеш фона с переходами (6 секунд)
+            const originalBg = document.body.style.background;
+            const flashes = [
+                'linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%)',
+                'linear-gradient(135deg, #ffd700 0%, #ffff00 50%, #ff4500 100%)',
+                'linear-gradient(135deg, #00ff00 0%, #00bfff 50%, #0000ff 100%)',
+                'linear-gradient(135deg, #ff00ff 0%, #8a2be2 50%, #4b0082 100%)'
+            ];
+            let flashIndex = 0;
+            const flashInterval = setInterval(() => {
+                document.body.style.background = flashes[flashIndex % flashes.length];
+                flashIndex++;
+            }, 200);
+            setTimeout(() => {
+                clearInterval(flashInterval);
+                document.body.style.background = originalBg;
+            }, CELEBRATION_DURATION_MS);
 
-            // 4. Интенсивная вибрация (6 секунд)
-            if (tg.HapticFeedback) {
-                for (let v = 0; v < CELEBRATION_DURATION_MS / 300; v++) {
-                    setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
-                }
-            }
+            // 4. Интенсивная вибрация (6 секунд)
+            if (tg.HapticFeedback) {
+                for (let v = 0; v < CELEBRATION_DURATION_MS / 300; v++) {
+                    setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
+                }
+            }
 
-            // 5. Специальное уведомление (СКОРРЕКТИРОВАНО)
-            const achText = document.getElementById('ach-text');
-            achText.innerText = `${threshold} тапов! 🌈💥`; // Убрано слово "Достижение:"
-            const elem = document.getElementById('achievement');
-            elem.classList.add('show');
-            setTimeout(() => {
-                elem.classList.remove('show');
-            }, CELEBRATION_DURATION_MS - 2000);
-        }
+            // 5. Специальное уведомление (СКОРРЕКТИРОВАНО)
+            const achText = document.getElementById('ach-text');
+            achText.innerText = `${threshold} тапов! 🌈💥`; // Убрано слово "Достижение:"
+            const elem = document.getElementById('achievement');
+            elem.classList.add('show');
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, CELEBRATION_DURATION_MS - 2000);
+        }
 
-        // Achievement: Убрано слово "Достижение:"
-        function showAchievement(threshold) {
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
+        // Achievement: Убрано слово "Достижение:"
+        function showAchievement(threshold) {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
 
-            const achText = document.getElementById('ach-text');
-            achText.innerText = `${threshold} тапов! 🎉`; // Убрано слово "Достижение:"
-            const elem = document.getElementById('achievement');
-            elem.classList.add('show');
-            setTimeout(() => {
-                elem.classList.remove('show');
-            }, 3000);
-            
-            // Разблокировка слота в гриде
-            if (achSlotMapping[threshold]) {
-                const slotId = `ach-slot-${achSlotMapping[threshold]}`;
-                const slot = document.getElementById(slotId);
-                if (slot) {
-                    slot.classList.add('unlocked');
-                    slot.onclick = () => alert(`Ачивка разблокирована: ${threshold} тапов!`);
-                }
-            }
-        }
-        
-        // showSpecialAchievement - УДАЛЕНО
+            const achText = document.getElementById('ach-text');
+            achText.innerText = `${threshold} тапов! 🎉`; // Убрано слово "Достижение:"
+            const elem = document.getElementById('achievement');
+            elem.classList.add('show');
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, 3000);
+            
+            // Разблокировка слота в гриде
+            if (achSlotMapping[threshold]) {
+                const slotId = `ach-slot-${achSlotMapping[threshold]}`;
+                const slot = document.getElementById(slotId);
+                if (slot) {
+                    slot.classList.add('unlocked');
+                    slot.onclick = () => alert(`Ачивка разблокирована: ${threshold} тапов!`);
+                }
+            }
+        }
+        
+        // showSpecialAchievement - УДАЛЕНО
 
-        function checkAchievement(newScore) {
-            // 1. Проверка на СУПЕР (каждая 1000)
-            if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
-                launchSuperEffect(newScore);
-            }
-            // 2. Проверка на MILESTONE (500, 1500, 2500...)
-            else if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
-                unlockedMilestones.add(newScore);
-                launchMilestone();
-            }
-            // 3. Проверка на SALUTE (Каждая сотня, исключая MILESTONE и SUPER)
-            else if (everyHundredThresholds.includes(newScore)) {
-                const isMilestone = milestoneThresholds.includes(newScore);
-                const isSuper = superThresholds.includes(newScore);
+        function checkAchievement(newScore) {
+            // 1. Проверка на СУПЕР (каждая 1000)
+            if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
+                launchSuperEffect(newScore);
+            }
+            // 2. Проверка на MILESTONE (500, 1500, 2500...)
+            else if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
+                unlockedMilestones.add(newScore);
+                launchMilestone();
+            }
+            // 3. Проверка на SALUTE (Каждая сотня, исключая MILESTONE и SUPER)
+            else if (everyHundredThresholds.includes(newScore)) {
+                const isMilestone = milestoneThresholds.includes(newScore);
+                const isSuper = superThresholds.includes(newScore);
 
-                if (!isMilestone && !isSuper) {
-                    launchSalute();
-                }
-            }
+                if (!isMilestone && !isSuper) {
+                    launchSalute();
+                }
+            }
 
-            // 4. Проверка на обычную Ачивку (для уведомления)
-            if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
-                unlockedAchievements.add(newScore);
-                showAchievement(newScore);
-            }
+            // 4. Проверка на обычную Ачивку (для уведомления)
+            if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
+                unlockedAchievements.add(newScore);
+                showAchievement(newScore);
+            }
 
-            // 5. Проверка специальные ачивки (УДАЛЕНО)
-        }
+            // 5. Проверка специальные ачивки (УДАЛЕНО)
+        }
 
-        function clickCat(catNumber, x, y) {
-            score++;
-            document.getElementById('score').innerText = `Очки уюта: ${score}`;
-            checkAchievement(score);
+        function clickCat(catNumber, x, y) {
+            score++;
+            document.getElementById('score').innerText = `Очки уюта: ${score}`;
+            checkAchievement(score);
 
-            // Получаем позицию клика (для кнопки - это сама кнопка, для кота - его центр)
-            let finalX, finalY;
-            if (catNumber === 1 || catNumber === 2) {
-                const cat = document.getElementById('cat' + catNumber);
-                const rect = cat.getBoundingClientRect();
-                finalX = rect.left + rect.width / 2;
-                finalY = rect.top + rect.height / 2;
-            } else {
-                finalX = x;
-                finalY = y;
-            }
+            // Получаем позицию клика (для кнопки - это сама кнопка, для кота - его центр)
+            let finalX, finalY;
+            if (catNumber === 1 || catNumber === 2) {
+                const cat = document.getElementById('cat' + catNumber);
+                const rect = cat.getBoundingClientRect();
+                finalX = rect.left + rect.width / 2;
+                finalY = rect.top + rect.height / 2;
+            } else {
+                finalX = x;
+                finalY = y;
+            }
 
-            // Создаём сердечко
-            createParticle(finalX, finalY, '♥️', '#ff69b4');
+            // Создаём сердечко
+            createParticle(finalX, finalY, '♥️', '#ff69b4');
 
-            // Меняем фото, только если тапнули по коту, а не по большой кнопке
-            if (catNumber === 1) {
-                cat1Index = (cat1Index + 1) % cat1Photos.length;
-                document.getElementById('cat1').src = cat1Photos[cat1Index];
-            } else if (catNumber === 2) {
-                cat2Index = (cat2Index + 1) % cat2Photos.length;
-                document.getElementById('cat2').src = cat2Photos[cat2Index];
-            }
+            // Меняем фото, только если тапнули по коту, а не по большой кнопке
+            if (catNumber === 1) {
+                cat1Index = (cat1Index + 1) % cat1Photos.length;
+                document.getElementById('cat1').src = cat1Photos[cat1Index];
+            } else if (catNumber === 2) {
+                cat2Index = (cat2Index + 1) % cat2Photos.length;
+                document.getElementById('cat2').src = cat2Photos[cat2Index];
+            }
 
-            // Автосейв счёта
-            tg.GameProxy.setGameScore({ score: score }, (data) => {
-                if (data) {
-                    // Score saved
-                }
-            });
-        }
+            // Автосейв счёта
+            tg.GameProxy.setGameScore({ score: score }, (data) => {
+                if (data) {
+                    // Score saved
+                }
+            });
+        }
 
-        function showLeaderboard() {
-            tg.GameProxy.showLeaderboard();
-        }
+        function showLeaderboard() {
+            tg.GameProxy.showLeaderboard();
+        }
 
-        function closeModal() {
-            const modal = document.getElementById('welcomeModal');
-            modal.classList.remove('show');
-        }
-        
-        // --- НОВАЯ ЛОГИКА ДЛЯ БОЛЬШОЙ КРУГЛОЙ КНОПКИ ---
+        function closeModal() {
+            const modal = document.getElementById('welcomeModal');
+            modal.classList.remove('show');
+        }
+        
+        // --- НОВАЯ ЛОГИКА ДЛЯ БОЛЬШОЙ КРУГЛОЙ КНОПКИ ---
 
-        function handleTapZone(e) {
-            e.preventDefault(); // Предотвращаем стандартное поведение
+        function handleTapZone(e) {
+            e.preventDefault(); // Предотвращаем стандартное поведение
 
-            let clientX;
-            // Определяем координаты (для тача берем первый палец, для клика - mouseX)
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-            } else if (e.clientX !== undefined) {
-                clientX = e.clientX;
-            } else {
-                return; // Если нет координат, выходим
-            }
+            let clientX;
+            // Определяем координаты (для тача берем первый палец, для клика - mouseX)
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            } else if (e.clientX !== undefined) {
+                clientX = e.clientX;
+            } else {
+                return; // Если нет координат, выходим
+            }
 
-            const button = e.currentTarget;
-            const rect = button.getBoundingClientRect();
-            const center = rect.left + rect.width / 2;
-            const tapX = clientX;
-            const tapY = rect.top + rect.height / 2; // Центр кнопки по вертикали
+            const button = e.currentTarget;
+            const rect = button.getBoundingClientRect();
+            const center = rect.left + rect.width / 2;
+            const tapX = clientX;
+            const tapY = rect.top + rect.height / 2; // Центр кнопки по вертикали
 
-            let catToClick;
-            
-            // Если тапнули по левой стороне (меньше центра)
-            if (tapX < center) {
-                catToClick = 1; // Шоколадный котик
-            } 
-            // Если тапнули по правой стороне (больше центра)
-            else {
-                catToClick = 2; // Серебристый котик
-            }
-            
-            // Вызываем основную функцию клика, передавая координаты тапа
-            clickCat(catToClick, tapX, tapY);
-        }
+            let catToClick;
+            
+            // Если тапнули по левой стороне (меньше центра)
+            if (tapX < center) {
+                catToClick = 1; // Шоколадный котик
+            } 
+            // Если тапнули по правой стороне (больше центра)
+            else {
+                catToClick = 2; // Серебристый котик
+            }
+            
+            // Вызываем основную функцию клика, передавая координаты тапа
+            clickCat(catToClick, tapX, tapY);
+        }
 
-        // Инициализация
-        window.onload = function() {
-            const modal = document.getElementById('welcomeModal');
-            modal.classList.add('show');
+        // Инициализация
+        window.onload = function() {
+            const modal = document.getElementById('welcomeModal');
+            modal.classList.add('show');
 
-            const audio = document.getElementById('backgroundMusic');
-            audio.volume = 0.3;
-            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
-            
-            // 1. Котики: обрабатываем только touchstart/click в центре
-            const cat1 = document.getElementById('cat1');
-            const cat2 = document.getElementById('cat2');
-            
-            // Для котиков отключаем старые обработчики, чтобы не было двойного срабатывания, если тап попадает сразу на кота и на зону тапа.
-            // Теперь основная зона клика - tapZone. Коты остаются для визуального отклика
-            
-            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1); }, { passive: false });
-            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2); }, { passive: false });
-            cat1.addEventListener('click', () => clickCat(1));
-            cat2.addEventListener('click', () => clickCat(2));
+            const audio = document.getElementById('backgroundMusic');
+            audio.volume = 0.3;
+            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
+            
+            // 1. Котики: обрабатываем только touchstart/click в центре
+            const cat1 = document.getElementById('cat1');
+            const cat2 = document.getElementById('cat2');
+            
+            // Для котиков отключаем старые обработчики, чтобы не было двойного срабатывания, если тап попадает сразу на кота и на зону тапа.
+            // Теперь основная зона клика - tapZone. Коты остаются для визуального отклика
+            
+            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1); }, { passive: false });
+            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2); }, { passive: false });
+            cat1.addEventListener('click', () => clickCat(1));
+            cat2.addEventListener('click', () => clickCat(2));
 
-            // 2. Большая кнопка: обрабатываем тапы/клики для смены фото
-            const tapZone = document.getElementById('tapZone');
-            tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
-            tapZone.addEventListener('click', handleTapZone);
-        };
-    </script>
-    <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
+            // 2. Большая кнопка: обрабатываем тапы/клики для смены фото
+            const tapZone = document.getElementById('tapZone');
+            tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
+            tapZone.addEventListener('click', handleTapZone);
+        };
+    </script>
+    <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 </body>
 </html>
