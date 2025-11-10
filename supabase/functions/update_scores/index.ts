@@ -26,15 +26,24 @@ async function importHmacKey(raw: string) {
 // 1) secretKey = HMAC_SHA256("WebAppData", bot_token)
 // 2) hash = HMAC_SHA256(data_check_string, secretKey) (hex)
 async function verifyTelegramInitData(initData: string, botToken: string) {
-  const params = new URLSearchParams(initData)
-  const hash = params.get("hash") || ""
-  params.delete("hash")
-  // Удаляем signature - оно не участвует в проверке
-  params.delete("signature")
+  // Парсим вручную чтобы сохранить оригинальные значения
+  const params: Record<string, string> = {}
+  let hash = ""
+  
+  for (const part of initData.split('&')) {
+    const [key, ...valueParts] = part.split('=')
+    const value = valueParts.join('=')
+    if (key === 'hash') {
+      hash = value
+    } else if (key !== 'signature') {
+      // Декодируем URL-encoded значения
+      params[key] = decodeURIComponent(value)
+    }
+  }
 
   const pairs: string[] = []
-  for (const [k, v] of Array.from(params.entries()).sort()) {
-    pairs.push(`${k}=${v}`)
+  for (const k of Object.keys(params).sort()) {
+    pairs.push(`${k}=${params[k]}`)
   }
   const dataCheckString = pairs.join("\n")
 
