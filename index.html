@@ -620,72 +620,116 @@
         tg.expand();
 
         // Инициализация Supabase
-        const supabaseUrl = 'https://aduxktmwnrilsbpydhye.supabase.co'; // замените на ваш URL
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkdXhrdG13bnJpbHNicHlkaHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3ODc2MzYsImV4cCI6MjA3ODM2MzYzNn0.MBj-HLDcqu2PHkbJp7ZfvWf2GsX_83-ZFny3YI5uRbU'; // замените на ваш anon key
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        let supabaseClient = null;
+        try {
+            const supabaseUrl = 'https://aduxktmwnrilsbpydhye.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkdXhrdG13bnJpbHNicHlkaHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3ODc2MzYsImV4cCI6MjA3ODM2MzYzNn0.MBj-HLDcqu2PHkbJp7ZfvWf2GsX_83-ZFny3YI5uRbU';
+            // Проверяем наличие Supabase SDK
+            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            } else {
+                console.warn('Supabase SDK не загружен, лидерборд будет недоступен');
+            }
+        } catch (error) {
+            console.error('Ошибка инициализации Supabase:', error);
+        }
 
         // Функции работы с Supabase
         async function updateScore(telegramId, username, newScore) {
-            const { data, error } = await supabase
-                .from('leaderboard')
-                .select('max_score')
-                .eq('telegram_id', telegramId)
-                .single();
-
-            if (error && error.code !== 'PGRST116') {
-                console.error('Ошибка при запросе max_score:', error);
-                return;
+            if (!supabaseClient) {
+                return; // Supabase не инициализирован
             }
 
-            const currentMax = data ? data.max_score : 0;
-
-            if (newScore > currentMax) {
-                const { error: upsertError } = await supabase
+            try {
+                const { data, error } = await supabaseClient
                     .from('leaderboard')
-                    .upsert({ telegram_id: telegramId, username: username, max_score: newScore, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' });
+                    .select('max_score')
+                    .eq('telegram_id', telegramId)
+                    .single();
 
-                if (upsertError) {
-                    console.error('Ошибка при обновлении счета:', upsertError);
+                if (error && error.code !== 'PGRST116') {
+                    console.error('Ошибка при запросе max_score:', error);
+                    return;
                 }
+
+                const currentMax = data ? data.max_score : 0;
+
+                if (newScore > currentMax) {
+                    const { error: upsertError } = await supabaseClient
+                        .from('leaderboard')
+                        .upsert({ telegram_id: telegramId, username: username, max_score: newScore, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' });
+
+                    if (upsertError) {
+                        console.error('Ошибка при обновлении счета:', upsertError);
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка в updateScore:', error);
             }
         }
 
         async function getLeaderboardTop() {
-            const { data, error } = await supabase
-                .from('leaderboard')
-                .select('username, max_score')
-                .order('max_score', { ascending: false })
-                .limit(10);
-
-            if (error) {
-                console.error('Ошибка при получении топа:', error);
+            if (!supabaseClient) {
+                console.warn('Supabase не инициализирован');
                 return [];
             }
-            return data;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('leaderboard')
+                    .select('username, max_score')
+                    .order('max_score', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    console.error('Ошибка при получении топа:', error);
+                    return [];
+                }
+                return data || [];
+            } catch (error) {
+                console.error('Ошибка в getLeaderboardTop:', error);
+                return [];
+            }
         }
 
         async function showLeaderboard() {
-            const leaderboardData = await getLeaderboardTop();
-            const leaderboardModal = document.getElementById('leaderboardModal');
-            const leaderboardList = document.getElementById('leaderboardList');
-            leaderboardList.innerHTML = '';
+            try {
+                const leaderboardModal = document.getElementById('leaderboardModal');
+                const leaderboardList = document.getElementById('leaderboardList');
+                
+                if (!leaderboardModal || !leaderboardList) {
+                    console.error('Элементы модального окна не найдены');
+                    return;
+                }
 
-            if (leaderboardData.length === 0) {
-                const li = document.createElement('li');
-                li.textContent = 'Пока нет рекордов';
-                li.style.color = '#b0b0b0';
-                leaderboardList.appendChild(li);
-            } else {
-                leaderboardData.forEach(({ username, max_score }, index) => {
+                // Показываем индикатор загрузки
+                leaderboardList.innerHTML = '<li style="color: #b0b0b0;">Загрузка...</li>';
+                leaderboardModal.classList.add('show');
+                leaderboardModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+
+                const leaderboardData = await getLeaderboardTop();
+                leaderboardList.innerHTML = '';
+
+                if (leaderboardData.length === 0) {
                     const li = document.createElement('li');
-                    li.textContent = `${index + 1}. ${username || 'Аноним'} - ${max_score} очков`;
+                    li.textContent = 'Пока нет рекордов';
+                    li.style.color = '#b0b0b0';
                     leaderboardList.appendChild(li);
-                });
+                } else {
+                    leaderboardData.forEach(({ username, max_score }, index) => {
+                        const li = document.createElement('li');
+                        li.textContent = `${index + 1}. ${username || 'Аноним'} - ${max_score} очков`;
+                        leaderboardList.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при показе лидерборда:', error);
+                const leaderboardList = document.getElementById('leaderboardList');
+                if (leaderboardList) {
+                    leaderboardList.innerHTML = '<li style="color: #ff6b6b;">Ошибка загрузки данных</li>';
+                }
             }
-
-            leaderboardModal.classList.add('show');
-            leaderboardModal.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('has-modal');
         }
 
         let score = 0;
@@ -1255,7 +1299,7 @@
 
 
 
-        async function clickCat(catNumber, x, y) {
+        function clickCat(catNumber, x, y) {
 
             score++;
 
@@ -1263,10 +1307,13 @@
 
             checkAchievement(score);
 
-            // Обновляем счёт в Supabase
+            // Обновляем счёт в Supabase асинхронно (неблокирующий вызов)
             const user = tg.initDataUnsafe?.user;
-            if (user) {
-                await updateScore(user.id, user.username || 'anon', score);
+            if (user && supabaseClient) {
+                // Вызываем без await, чтобы не блокировать UI
+                updateScore(user.id, user.username || 'anon', score).catch(err => {
+                    console.error('Ошибка при сохранении счета:', err);
+                });
             }
 
 
@@ -1339,17 +1386,18 @@
 
 
         function openModal() {
-
-            const modal = document.getElementById('welcomeModal');
-
-            if (!modal) return;
-
-            modal.classList.add('show');
-
-            modal.setAttribute('aria-hidden', 'false');
-
-            document.body.classList.add('has-modal');
-
+            try {
+                const modal = document.getElementById('welcomeModal');
+                if (!modal) {
+                    console.warn('Модальное окно не найдено');
+                    return;
+                }
+                modal.classList.add('show');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } catch (error) {
+                console.error('Ошибка при открытии модального окна:', error);
+            }
         }
 
 
@@ -1445,8 +1493,10 @@
         // Инициализация
 
         window.onload = function() {
-
-            openModal();
+            // Небольшая задержка для гарантии полной загрузки DOM
+            setTimeout(() => {
+                openModal();
+            }, 100);
 
 
 
@@ -1466,19 +1516,27 @@
 
             
 
-            // Для котиков отключаем старые обработчики, чтобы не было двойного срабатывания, если тап попадает сразу на кота и на зону тапа.
+            if (cat1 && cat2) {
+                // Для котиков отключаем старые обработчики, чтобы не было двойного срабатывания, если тап попадает сразу на кота и на зону тапа.
 
-            // Теперь основная зона клика - tapZone. Коты остаются для визуального отклика
+                // Теперь основная зона клика - tapZone. Коты остаются для визуального отклика
 
-            
+                cat1.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    clickCat(1); 
+                }, { passive: false });
 
-            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1); }, { passive: false });
+                cat2.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    clickCat(2); 
+                }, { passive: false });
 
-            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2); }, { passive: false });
+                cat1.addEventListener('click', () => clickCat(1));
 
-            cat1.addEventListener('click', () => clickCat(1));
-
-            cat2.addEventListener('click', () => clickCat(2));
+                cat2.addEventListener('click', () => clickCat(2));
+            } else {
+                console.warn('Элементы котиков не найдены');
+            }
 
 
 
@@ -1486,19 +1544,25 @@
 
             const tapZone = document.getElementById('tapZone');
 
-            tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
+            if (tapZone) {
+                tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
 
-            tapZone.addEventListener('click', handleTapZone);
+                tapZone.addEventListener('click', handleTapZone);
+            } else {
+                console.warn('Элемент tapZone не найден');
+            }
 
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
-            leaderboardModal.addEventListener('click', (e) => {
-                if (e.target.id === 'leaderboardModal') {
-                    leaderboardModal.classList.remove('show');
-                    leaderboardModal.setAttribute('aria-hidden', 'true');
-                    document.body.classList.remove('has-modal');
-                }
-            });
+            if (leaderboardModal) {
+                leaderboardModal.addEventListener('click', (e) => {
+                    if (e.target.id === 'leaderboardModal') {
+                        leaderboardModal.classList.remove('show');
+                        leaderboardModal.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('has-modal');
+                    }
+                });
+            }
 
         };
 
