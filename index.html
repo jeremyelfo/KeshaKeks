@@ -5,27 +5,131 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кеша и Кекс снимают стресс!</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial; text-align: center; background: #f0f8ff; padding: 20px; }
-        .cat-container { display: flex; justify-content: space-around; margin: 20px 0; }
-        .cat { width: 150px; height: 150px; cursor: pointer; border-radius: 50%; transition: transform 0.1s; }
-        .cat:hover { transform: scale(1.05); }
-        .cat1 { border: 3px solid #8B4513; } /* Шоколадный — коричневая рамка */
-        .cat2 { border: 3px solid #C0C0C0; } /* Серебристый — серая рамка */
-        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
-        #score { font-size: 24px; color: #333; margin: 20px; }
-        h1 { color: #4A4A4A; }
+        body { 
+            font-family: 'Fredoka', sans-serif; 
+            text-align: center; 
+            background: linear-gradient(135deg, #ffeef9 0%, #e3f2fd 50%, #f3e5f5 100%); /* Милый градиент для котиков */
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+        }
+        /* Учёт Telegram хедера: отступ сверху для кнопок в углах */
+        .content-wrapper {
+            padding-top: env(safe-area-inset-top, 60px); /* Адаптивно под хедер Telegram */
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        .cat-container { 
+            display: flex; 
+            justify-content: space-around; 
+            margin: 20px 0; 
+            gap: 20px;
+        }
+        .cat { 
+            width: 150px; 
+            height: 150px; 
+            cursor: pointer; 
+            border-radius: 50%; 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .cat:hover { 
+            transform: scale(1.1); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .cat:active {
+            transform: scale(0.95); /* Эффект нажатия */
+        }
+        .cat1 { border: 4px solid #8B4513; background: rgba(139, 69, 19, 0.1); } /* Шоколадный — теплая рамка */
+        .cat2 { border: 4px solid #C0C0C0; background: rgba(192, 192, 192, 0.1); } /* Серебристый — серебристая рамка */
+        button { 
+            padding: 12px 24px; 
+            font-size: 18px; 
+            margin: 10px; 
+            background: linear-gradient(45deg, #ff9a9e, #fecfef); 
+            border: none; 
+            border-radius: 25px; 
+            color: #333; 
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #score { 
+            font-size: 28px; 
+            color: #4A4A4A; 
+            margin: 20px; 
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        h1 { 
+            color: #6A1B9A; 
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        p {
+            color: #666;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        /* Ачивка-уведомление: скрытый div для стиля */
+        .achievement {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 15px 25px;
+            border-radius: 20px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: none;
+        }
+        .achievement.show {
+            opacity: 1;
+            display: block;
+            animation: bounce 0.5s ease;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
     </style>
 </head>
 <body>
-    <h1>Поглаживай котиков! 🐱🐱</h1>
-    <div class="cat-container">
-        <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Шоколадный котик" onclick="clickCat(1)">
-        <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2551.jpeg" alt="Серебристый котик" onclick="clickCat(2)">
+    <div class="content-wrapper">
+        <h1>Кеша и Кекс снимают стресс! 🐱🐱</h1>
+        <div class="cat-container">
+            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)" onclick="clickCat(1)">
+            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2551.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
+        </div>
+        <div id="score">Очки: 0</div>
+        <button onclick="showLeaderboard()">🏆 Показать топ</button>
+        <p>Котики мурлычут в унисон! Общий счёт растёт от обоих. 😻</p>
     </div>
-    <div id="score">Очки: 0</div>
-    <button onclick="showLeaderboard()">Показать топ</button>
-    <p>Котики мурлычут в унисон! Общий счёт растёт от обоих. 😻</p>
+
+    <!-- Элемент для показа ачивок (вместо alert, для стиля) -->
+    <div id="achievement" class="achievement">
+        <span id="ach-text"></span> 🏆
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -33,10 +137,10 @@
         tg.expand(); // Полноэкранный режим
 
         let score = 0;
-        let cat1Index = 0; // Индекс фото для шоколадного
-        let cat2Index = 0; // Для серебристого
+        let cat1Index = 0; // Индекс фото для Кеши (шоколадного)
+        let cat2Index = 0; // Для Кекса (серебристого)
 
-        // Массивы с фото (замени на реальные URL из репо)
+        // Массивы с фото
         const cat1Photos = [
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2556.jpeg",
@@ -52,9 +156,36 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg"
         ];
 
+        // Пороги для ачивок
+        const achievementThresholds = [
+            100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+            1300, 1500, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
+            6000, 7000, 8000, 9000, 9999
+        ];
+        const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
+
+        function showAchievement(threshold) {
+            const achText = document.getElementById('ach-text');
+            achText.innerText = `Ачивка разблокирована: ${threshold} тапов! 🎉`;
+            const elem = document.getElementById('achievement');
+            elem.classList.add('show');
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, 3000); // Скрыть через 3 сек
+        }
+
+        function checkAchievement(newScore) {
+            if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
+                unlockedAchievements.add(newScore);
+                showAchievement(newScore);
+                // Альтернатива: tg.showAlert(`Поздравляем! Ачивка "${newScore} тапов" разблокирована! 🏆`);
+            }
+        }
+
         function clickCat(catNumber) {
             score++;
             document.getElementById('score').innerText = `Очки: ${score}`;
+            checkAchievement(score); // Проверяем ачивку
 
             // Меняем фото выбранного кота
             if (catNumber === 1) {
@@ -69,7 +200,9 @@
             tg.MainButton.setText(`Очки: ${score}`);
             tg.MainButton.show();
             tg.GameProxy.setGameScore({ score: score }, (data) => {
-                if (data) tg.showAlert('Муррр! Счёт обновлён!');
+                if (data) {
+                    // Можно добавить вибрацию: tg.HapticFeedback.impactOccurred('light');
+                }
             });
         }
 
@@ -78,7 +211,11 @@
         }
 
         // Инициализация кнопки
-        tg.MainButton.setText('Сохранить поглаживания').onClick(() => { /* Можно добавить автосейв */ }).show();
+        tg.MainButton.setText('Сохранить поглаживания').onClick(() => { 
+            // Автосейв при клике на MainButton
+            tg.GameProxy.setGameScore({ score: score });
+        }).show();
     </script>
 </body>
 </html>
+```​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
