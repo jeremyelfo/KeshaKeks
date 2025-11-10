@@ -1,14 +1,16 @@
-
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- Отключаем зум при двойном тапе -->
-    <title>Кеша и Кекс снимают стресс!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <title>Кеша и Кекс снимают стресс!</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Новая переменная для продолжительности анимаций (6 секунд) */
+            --celebration-duration: 6s; 
+        }
+
         body { 
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif; 
             text-align: center; 
@@ -21,9 +23,11 @@
             overflow: hidden; /* Чтобы сердечки не выходили за экран */
             touch-action: manipulation; /* Предотвращаем зум и скролл при тапах */
         }
-        /* Учёт Telegram хедера: увеличенный отступ сверху для кнопок в углах */
+        /* Учёт Telegram хедера: УВЕЛИЧЕННЫЙ отступ сверху для избежания перекрытия */
         .content-wrapper {
-            padding-top: env(safe-area-inset-top, 100px); /* Увеличено для избежания перекрытия хедера Telegram */
+            /* УВЕЛИЧЕНО! Дополнительный отступ, эквивалентный высоте ~3 строк H1, 
+            чтобы опустить заголовок, котов, счет и кнопку ниже. */
+            padding-top: calc(env(safe-area-inset-top, 100px) + 60px); 
             padding-bottom: env(safe-area-inset-bottom, 20px);
             max-width: 90%; /* Ограничиваем ширину для центрирования */
             margin: 0 auto; /* Центрируем контент */
@@ -104,13 +108,13 @@
             font-size: 14px;
             margin-top: 15px;
         }
-        /* Ачивка-уведомление: адаптировано под тёмную тему, теперь ближе к низу */
+        /* Ачивка-уведомление */
         .achievement {
             position: fixed;
-            bottom: 5%; /* Ближе к нижнему краю */
+            bottom: 5%; 
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8); /* Тёмный фон */
+            background: rgba(0, 0, 0, 0.8); 
             backdrop-filter: blur(10px);
             color: #ffffff;
             padding: 15px 25px;
@@ -124,19 +128,21 @@
             opacity: 0;
             transition: opacity 0.3s;
             display: none;
+            /* Убедимся, что тапы по экрану не скрывают (для анимаций) */
+            pointer-events: none; 
         }
         .achievement.show {
             opacity: 1;
             display: block;
-            animation: bounceUp 0.5s ease; /* Анимация снизу вверх */
+            animation: bounceUp 0.5s ease; 
         }
-        /* Специальная ачивка (мамми/паппи): выше, отдельный элемент, не перекрывает обычную */
+        /* Специальная ачивка (мамми/паппи) */
         .special-achievement {
             position: fixed;
-            top: 10%; /* Выше экрана, у верхнего края */
+            top: 10%; 
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8); /* Тёмный фон */
+            background: rgba(0, 0, 0, 0.8); 
             backdrop-filter: blur(10px);
             color: #ffffff;
             padding: 15px 25px;
@@ -146,35 +152,42 @@
             font-weight: 600;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            z-index: 1001; /* Выше обычной ачивки */
+            z-index: 1001; 
             opacity: 0;
             transition: opacity 0.3s;
             display: none;
+            /* Убедимся, что тапы по экрану не скрывают (для анимаций) */
+            pointer-events: none;
         }
         .special-achievement.show {
             opacity: 1;
             display: block;
-            animation: bounceDown 0.5s ease; /* Анимация сверху вниз для отличия */
+            animation: bounceDown 0.5s ease; 
         }
         @keyframes bounceUp {
             0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(10px); } /* Начинается снизу */
+            40% { transform: translateX(-50%) translateY(10px); } 
             60% { transform: translateX(-50%) translateY(5px); }
         }
         @keyframes bounceDown {
             0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(-10px); } /* Начинается сверху */
+            40% { transform: translateX(-50%) translateY(-10px); } 
             60% { transform: translateX(-50%) translateY(-5px); }
         }
-        /* Анимация сердечек: летают вверх от котов */
+        /* Анимация сердечек */
         .heart {
             position: absolute;
             font-size: 24px;
-            color: #ff69b4; /* Розовый для сердечек */
+            color: #ff69b4; 
             pointer-events: none;
             z-index: 100;
-            animation: floatUp 1s ease-out forwards;
+            /* Использование переменной для продолжительности анимации, но для клика оставляем 1s */
+            animation: floatUp 1s ease-out forwards; 
             transform-origin: center;
+        }
+        /* Переопределение для празднования: использует переменную --celebration-duration */
+        .celebration-particle {
+             animation-duration: var(--celebration-duration);
         }
         @keyframes floatUp {
             0% {
@@ -186,16 +199,16 @@
                 transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
             }
         }
-        /* Модальное окно: тёмная тема, стекло-эффект, менее прозрачное и в цветах приложения */
+        /* Модальное окно */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95); /* Ещё темнее для лучшего затемнения */
+            background: rgba(0, 0, 0, 0.95); 
             backdrop-filter: blur(10px);
-            display: none; /* Изначально скрыто полностью, чтобы не блокировать события */
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 2000;
@@ -203,18 +216,18 @@
             transition: opacity 0.3s ease;
         }
         .modal.show {
-            display: flex; /* Показываем при активации */
+            display: flex; 
             opacity: 1;
         }
         .modal-content {
-            background: linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,46,0.95) 50%, rgba(22,33,62,0.95) 100%); /* Градиент в цветах приложения, менее прозрачный */
+            background: linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,46,0.95) 50%, rgba(22,33,62,0.95) 100%); 
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             padding: 40px 20px;
             text-align: center;
             color: #ffffff;
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif; /* Шрифт как у Apple/Telegram */
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif; 
             font-size: 18px;
             font-weight: 500;
             max-width: 80%;
@@ -223,7 +236,7 @@
         .modal-content p {
             margin: 0;
             color: #e0e0e0;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Тень для лучшей читаемости */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); 
         }
         .close-btn {
             background: rgba(255, 255, 255, 0.15);
@@ -251,7 +264,6 @@
     </style>
 </head>
 <body>
-    <!-- Модальное окно приветствия -->
     <div id="welcomeModal" class="modal">
         <div class="modal-content">
             <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
@@ -270,17 +282,14 @@
         <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
     </div>
 
-    <!-- Элемент для показа обычных ачивок (вместо alert, для стиля) -->
     <div id="achievement" class="achievement">
         <span id="ach-text"></span> 🏆
     </div>
 
-    <!-- Новый элемент для специальных ачивок (мамми/паппи) — выше и отдельно -->
     <div id="specialAchievement" class="special-achievement">
         <span id="special-ach-text"></span> 🏆
     </div>
 
-    <!-- Фоновый звук мурлыканья -->
     <audio id="backgroundMusic" loop autoplay>
         <source src="mur.mp3" type="audio/mpeg">
         Ваш браузер не поддерживает аудио.
@@ -294,8 +303,9 @@
         let score = 0;
         let cat1Index = 0; // Индекс фото для Кеши (шоколадного)
         let cat2Index = 0; // Для Кекса (серебристого)
+        const CELEBRATION_DURATION_MS = 6000; // 6 секунд
 
-        // Массивы с фото
+        // Массивы с фото (оставлены без изменений для краткости)
         const cat1Photos = [
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2556.jpeg",
@@ -316,7 +326,6 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_16_2025-11-10_16-54-08.jpg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_14_2025-11-10_16-54-08.jpg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_11_2025-11-10_16-54-08.jpg"
-            
         ];
         const cat2Photos = [
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg",
@@ -339,89 +348,91 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_13_2025-11-10_16-54-08.jpg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_12_2025-11-10_16-54-08.jpg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_10_2025-11-10_16-54-08.jpg"
-            
         ];
 
-        // Расширенные пороги для ачивок: 1, 50 + каждые 100 до 1000000000, плюс дополнительные 150, 250, 350 и т.д.
+        // --- Управление порогами для ачивок и празднований ---
+
+        // Основные ачивки: 1, 50, 100, 150, 200, 250...
         const achievementThresholds = [1, 50];
-        for (let i = 1; i <= 10000000; i++) { // До 1e9 (1000000000 / 100 = 10M итераций, но JS справится)
-            achievementThresholds.push(i * 100);
-        }
-        // Добавляем дополнительные: 150, 250, 350, ..., до 1e9
+        const specialThresholds = []; // 333, 444, 555...
         for (let i = 1; i <= 10000000; i++) {
-            const extra = 100 * i + 50;
-            if (extra <= 1000000000) {
-                achievementThresholds.push(extra);
-            }
+            achievementThresholds.push(i * 100);
+            achievementThresholds.push(i * 100 + 50);
         }
-        const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
-
-        // Пороги для салюта: 100 + каждые 1000 от 1000 до 1000000000
-        const saluteThresholds = [100];
-        for (let i = 1; i <= 1000000; i++) { // 1e9 / 1000 = 1M
-            saluteThresholds.push(i * 1000);
-        }
-
-        // Пороги для milestone-эффекта (500, 1500, 2500, ... до 1000000000)
-        const milestoneThresholds = [];
-        for (let k = 0; k <= 999999; k++) { // До 1e9
-            const thresh = 500 + (k * 1000);
-            if (thresh <= 1000000000) {
-                milestoneThresholds.push(thresh);
-            }
-        }
-        const unlockedMilestones = new Set(); // Чтобы не повторять
-
-        // Пороги для супер-эффекта на каждую тысячу: 1000, 2000, 3000, ..., до 1000000000
-        const superThresholds = [];
-        for (let i = 1; i <= 1000000; i++) {
-            superThresholds.push(i * 1000);
-        }
-        const unlockedSupers = new Set();
-
-        // Новые специальные пороги: 333, 444, 555, 666, 777, ... (каждые +111) до 1000000000
-        const specialThresholds = [];
         for (let i = 0; ; i++) {
             const thresh = 333 + i * 111;
             if (thresh > 1000000000) break;
             specialThresholds.push(thresh);
         }
-        const unlockedSpecials = new Set();
+        
+        // Пороги для салюта: Каждая сотня (100, 200, 300...)
+        const everyHundredThresholds = [];
+        for (let i = 1; i <= 10000000; i++) {
+            everyHundredThresholds.push(i * 100);
+        }
 
-        function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000) {
+        // Пороги для milestone-эффекта (500, 1500, 2500, ...)
+        const milestoneThresholds = [];
+        for (let k = 0; k <= 999999; k++) { 
+            const thresh = 500 + (k * 1000);
+            if (thresh <= 1000000000) {
+                milestoneThresholds.push(thresh);
+            }
+        }
+
+        // Пороги для супер-эффекта на каждую тысячу: 1000, 2000, 3000, ...
+        const superThresholds = [];
+        for (let i = 1; i <= 1000000; i++) {
+            superThresholds.push(i * 1000);
+        }
+
+        // Хранилища для предотвращения повторов
+        const unlockedAchievements = new Set();
+        const unlockedMilestones = new Set();
+        const unlockedSupers = new Set();
+        const unlockedSpecials = new Set();
+        
+        // --- Вспомогательные функции ---
+
+        function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000, isCelebration = false) {
             const particle = document.createElement('div');
             particle.innerHTML = emoji;
-            particle.className = 'heart'; // Переиспользуем класс для анимации
+            particle.className = 'heart'; 
+            if (isCelebration) {
+                 // Устанавливаем класс для использования переменной --celebration-duration
+                particle.classList.add('celebration-particle'); 
+            }
+
             particle.style.left = x + 'px';
             particle.style.top = y + 'px';
             particle.style.color = color;
-            particle.style.fontSize = (24 + Math.random() * 12) + 'px'; // Немного вариации размера
-            particle.style.pointerEvents = 'none';
+            particle.style.fontSize = (24 + Math.random() * 12) + 'px'; 
+            particle.style.pointerEvents = 'none'; // ГЛАВНОЕ: Отключаем обработку тапов
             particle.style.zIndex = '100';
-            // Случайный сдвиг по X и угол для milestone
-            const randX = (Math.random() - 0.5) * 80;
-            const randAngle = (Math.random() - 0.5) * 720; // Больше поворота
+            
+            const randX = (Math.random() - 0.5) * (isCelebration ? 400 : 80); // Больше разброс для празднований
             particle.style.setProperty('--rand-x', randX + 'px');
-            // Кастомная анимация для milestone: дальше и быстрее
-            particle.style.animation = `floatUp ${duration / 1000}s ease-out forwards`;
+            
+            // Кастомная анимация для празднований
+            const finalDuration = isCelebration ? duration : 1000;
+            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`;
+            
             container.appendChild(particle);
-            // Удаляем после анимации
+            
             setTimeout(() => {
                 particle.remove();
-            }, duration);
+            }, finalDuration);
         }
 
         // Функция салюта: много сердечек по экрану
         function launchSalute() {
-            const numHearts = 50; // Количество сердечек в салюте
+            const numHearts = 50; 
             for (let i = 0; i < numHearts; i++) {
-                // Случайная стартовая позиция по всему экрану
                 const x = Math.random() * window.innerWidth;
                 const y = Math.random() * window.innerHeight;
-                // Добавляем задержку для волны
-                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body), i * 50);
+                // Используем CELEBRATION_DURATION_MS (6000) и isCelebration = true
+                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body, CELEBRATION_DURATION_MS, true), i * 50);
             }
-            // Вибрация
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
             }
@@ -432,33 +443,32 @@
             const centerX = window.innerWidth / 2;
             const centerY = window.innerHeight / 2;
             const numParticles = 30;
-            const emojis = ['🐾', '⭐', '✨', '🐱']; // Крутые эмодзи для вау
-            const colors = ['#ffd700', '#00ff00', '#ff00ff', '#ffff00']; // Золотой, зелёный, фиолетовый, жёлтый
+            const emojis = ['🐾', '⭐', '✨', '🐱']; 
+            const colors = ['#ffd700', '#00ff00', '#ff00ff', '#ffff00']; 
             for (let i = 0; i < numParticles; i++) {
                 const emoji = emojis[Math.floor(Math.random() * emojis.length)];
                 const color = colors[Math.floor(Math.random() * colors.length)];
-                const delay = i * 30; // Волна
+                const delay = i * 30; 
                 setTimeout(() => {
-                    // Расходимся от центра с рандомным направлением
-                    const angle = (i / numParticles) * Math.PI * 2;
+                    const angle = (i / numParticles) * Math.PI * 2 + Math.random() * Math.PI/4; // Рандом для большего разброса
                     const dist = 200 + Math.random() * 200;
                     const x = centerX + Math.cos(angle) * dist;
                     const y = centerY + Math.sin(angle) * dist;
-                    createParticle(x, y, emoji, color, document.body, 1500); // Дольше анимация
+                    // Используем CELEBRATION_DURATION_MS (6000) и isCelebration = true
+                    createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true); 
                 }, delay);
             }
-            // Сильная вибрация
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
                 setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
             }
-            // Короткий флеш фона для вау
+             // Флеш длится 6 секунд (но анимация флеша 0.3с)
             document.body.style.transition = 'background 0.3s ease';
             document.body.style.background = 'linear-gradient(135deg, #ff69b4 0%, #1a1a2e 50%, #16213e 100%)';
             setTimeout(() => {
                 document.body.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)';
                 document.body.style.transition = '';
-            }, 300);
+            }, 300); // Оставляем быстрый флеш
         }
 
         // Новый супер-эффект на каждую тысячу: мигание, моргание, эмодзи-шторм + радужный флеш
@@ -467,7 +477,7 @@
             unlockedSupers.add(threshold);
 
             // 1. Массовый шторм эмодзи по всему экрану
-            const numParticles = 100; // Больше для вау!
+            const numParticles = 100; 
             const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
             const superColors = ['#ff69b4', '#ffd700', '#00ff00', '#ff00ff', '#ffff00', '#ff1493', '#00bfff', '#ff4500'];
             for (let i = 0; i < numParticles; i++) {
@@ -475,16 +485,18 @@
                 const color = superColors[Math.floor(Math.random() * superColors.length)];
                 const x = Math.random() * window.innerWidth;
                 const y = Math.random() * window.innerHeight;
-                const delay = i * 20; // Быстрая волна
-                setTimeout(() => createParticle(x, y, emoji, color, document.body, 2000), delay); // Дольше летят
+                const delay = i * 20; 
+                // Используем CELEBRATION_DURATION_MS (6000) и isCelebration = true
+                setTimeout(() => createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true), delay); 
             }
 
             // 2. Мигание и моргание: анимация flash и blink
-            document.body.style.animation = 'blink 1s ease-in-out 3'; // Моргание 3 раза
+            // Анимации body и котов длятся 6 секунд
+            document.body.style.animation = `blink 1s ease-in-out ${CELEBRATION_DURATION_MS / 1000}`; // Моргание 6 раз (6с/1с)
             const cats = document.querySelectorAll('.cat');
             cats.forEach(cat => {
                 cat.style.animation = 'flash 0.5s ease-in-out infinite';
-                setTimeout(() => cat.style.animation = '', 1500); // Остановить через 1.5с
+                setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS); 
             });
 
             // 3. Радужный флеш фона с переходами
@@ -504,11 +516,12 @@
                 clearInterval(flashInterval);
                 document.body.style.background = originalBg;
                 document.body.style.animation = '';
-            }, 2000);
+            }, CELEBRATION_DURATION_MS); // Длительность 6 секунд
 
             // 4. Интенсивная вибрация
             if (tg.HapticFeedback) {
-                for (let v = 0; v < 5; v++) {
+                // Вибрация повторяется в течение 6 секунд
+                for (let v = 0; v < CELEBRATION_DURATION_MS / 300; v++) { 
                     setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
                 }
             }
@@ -520,11 +533,10 @@
             elem.classList.add('show');
             setTimeout(() => {
                 elem.classList.remove('show');
-            }, 4000); // Дольше показывать
+            }, CELEBRATION_DURATION_MS - 2000); // Показываем 4 секунды
         }
 
         function showAchievement(threshold) {
-            // Вибрация при ачивке
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
             }
@@ -535,10 +547,9 @@
             elem.classList.add('show');
             setTimeout(() => {
                 elem.classList.remove('show');
-            }, 3000); // Скрыть через 3 сек
+            }, 3000); 
         }
 
-        // Новая функция для специальных ачивок — использует отдельный элемент выше
         function showSpecialAchievement(threshold) {
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
@@ -556,24 +567,32 @@
         }
 
         function checkAchievement(newScore) {
+            // 1. Проверка на СУПЕР (каждая 1000)
+            if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
+                launchSuperEffect(newScore);
+            }
+            // 2. Проверка на MILESTONE (500, 1500, 2500...)
+            else if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
+                unlockedMilestones.add(newScore);
+                launchMilestone();
+            }
+            // 3. Проверка на SALUTE (Каждая сотня, исключая MILESTONE и SUPER)
+            else if (everyHundredThresholds.includes(newScore)) {
+                const isMilestone = milestoneThresholds.includes(newScore);
+                const isSuper = superThresholds.includes(newScore);
+                
+                if (!isMilestone && !isSuper) {
+                    launchSalute();
+                }
+            }
+            
+            // 4. Проверка на обычную Ачивку (для уведомления)
             if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
                 unlockedAchievements.add(newScore);
                 showAchievement(newScore);
-                // Проверяем на салют
-                if (saluteThresholds.includes(newScore)) {
-                    launchSalute();
-                }
-                // Проверяем на milestone
-                if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
-                    unlockedMilestones.add(newScore);
-                    launchMilestone();
-                }
-                // Проверяем на супер-эффект (каждую тысячу)
-                if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
-                    launchSuperEffect(newScore);
-                }
             }
-            // Проверяем специальные ачивки (независимо от основных)
+            
+            // 5. Проверка специальные ачивки
             if (specialThresholds.includes(newScore) && !unlockedSpecials.has(newScore)) {
                 unlockedSpecials.add(newScore);
                 showSpecialAchievement(newScore);
@@ -583,7 +602,7 @@
         function clickCat(catNumber) {
             score++;
             document.getElementById('score').innerText = `Очки уюта: ${score}`;
-            checkAchievement(score); // Проверяем ачивку
+            checkAchievement(score); 
 
             // Получаем позицию клика (центр кота)
             const cat = document.getElementById('cat' + catNumber);
@@ -592,8 +611,8 @@
             const x = rect.left - containerRect.left + rect.width / 2;
             const y = rect.top - containerRect.top + rect.height / 2;
 
-            // Создаём сердечко
-            createParticle(x, y, '♥️', '#ff69b4');
+            // Создаём сердечко (используем стандартную 1s анимацию)
+            createParticle(x, y, '♥️', '#ff69b4'); 
 
             // Меняем фото выбранного кота
             if (catNumber === 1) {
@@ -604,10 +623,10 @@
                 document.getElementById('cat2').src = cat2Photos[cat2Index];
             }
 
-            // Автосейв счёта после каждого тапа (уже работает!)
+            // Автосейв счёта
             tg.GameProxy.setGameScore({ score: score }, (data) => {
                 if (data) {
-                    // Можно добавить вибрацию: tg.HapticFeedback.impactOccurred('light');
+                    // console.log('Score saved:', score);
                 }
             });
         }
@@ -626,16 +645,17 @@
         window.onload = function() {
             const modal = document.getElementById('welcomeModal');
             modal.classList.add('show');
+            
             // Запуск фонового звука
             const audio = document.getElementById('backgroundMusic');
-            audio.volume = 0.3; // Тихо, чтобы не мешало
+            audio.volume = 0.3; 
             audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
 
-            // Добавляем обработчики touchstart для поддержки мультитача (одновременные тапы на двух котах)
+            // Добавляем обработчики touchstart для мультитача
             const cat1 = document.getElementById('cat1');
             const cat2 = document.getElementById('cat2');
             cat1.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Предотвращаем стандартное поведение для немедленного отклика
+                e.preventDefault(); 
                 clickCat(1);
             }, { passive: false });
             cat2.addEventListener('touchstart', (e) => {
@@ -643,11 +663,9 @@
                 clickCat(2);
             }, { passive: false });
             // Оставляем onclick для десктопа/мыши
+             cat1.addEventListener('click', () => clickCat(1));
+             cat2.addEventListener('click', () => clickCat(2));
         };
-
-        // MainButton отключена — автосейв в clickCat, кнопка не показывается
-        tg.MainButton.setText('Очки уюта: 0'); // Опционально: текст для скрытой кнопки, если нужно
-        // .onClick и .show() убраны!
     </script>
     <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 </body>
