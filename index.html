@@ -156,9 +156,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.9); /* Увеличена тьма для лучшего затемнения */
             backdrop-filter: blur(10px);
-            display: flex;
+            display: none; /* Изначально скрыто полностью, чтобы не блокировать события */
             justify-content: center;
             align-items: center;
             z-index: 2000;
@@ -166,6 +166,7 @@
             transition: opacity 0.3s ease;
         }
         .modal.show {
+            display: flex; /* Показываем при активации */
             opacity: 1;
         }
         .modal-content {
@@ -207,7 +208,7 @@
     <div id="welcomeModal" class="modal">
         <div class="modal-content">
             <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
-            <button class="close-btn" onclick="closeModal()">Начать мурлыкать!</button>
+            <button class="close-btn" onclick="closeModal()">Начать терапию!</button>
         </div>
     </div>
 
@@ -293,7 +294,7 @@
             }
 
             const achText = document.getElementById('ach-text');
-            achText.innerText = `Ачивка разблокирована: ${threshold} тапов! 🎉`;
+            achText.innerText = `Достижение: ${threshold} тапов! 🎉`;
             const elem = document.getElementById('achievement');
             elem.classList.add('show');
             setTimeout(() => {
