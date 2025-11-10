@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Новая переменная для продолжительности анимаций (6 секунд) */
             --celebration-duration: 6s;
         }
 
@@ -23,7 +22,43 @@
             position: relative;
             overflow: hidden;
             touch-action: manipulation;
+            /* Убедимся, что тело не сдвинуто слишком далеко */
+            padding-top: env(safe-area-inset-top, 0px); 
         }
+
+        /* --- АНИМАЦИИ ВОССТАНОВЛЕНЫ --- */
+        @keyframes floatUp {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--rand-x, 0), -200px) scale(0.5);
+                opacity: 0;
+            }
+        }
+        @keyframes flash-strong {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+        @keyframes blink-strong {
+            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
+            50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
+        }
+        @keyframes super-flash {
+            0%, 100% { background: linear-gradient(135deg, #ff69b4, #00ffff); }
+            50% { background: linear-gradient(135deg, #ffff00, #ff1493); }
+        }
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+        .achievement.show {
+            opacity: 1;
+        }
+        /* --- КОНЕЦ АНИМАЦИЙ --- */
 
         /* --- НОВЫЕ БЛОКИ ДЛЯ ВЕРХА СТРАНИЦЫ --- */
         .top-fixed-elements {
@@ -34,31 +69,26 @@
             /* Учитываем Telegram header */
             padding-top: calc(env(safe-area-inset-top, 20px) + 5px); 
             z-index: 1000;
+            background: rgba(10, 10, 10, 0.5); /* Полупрозрачный фон, чтобы ачивки не сливались */
+            backdrop-filter: blur(5px);
         }
 
-        /* Кнопки Telegram-заглушки УДАЛЕНЫ */
-        .telegram-buttons {
-            /* Блок удален */
-        }
-
-        /* Уменьшенный, однострочный грид ачивок */
         .achievement-grid {
             display: flex;
-            justify-content: center; /* Центрируем слоты */
+            justify-content: center;
             gap: 5px;
             padding: 5px 10px;
             max-width: 95%;
             margin: 0 auto;
         }
 
-        /* Слот ачивки сделан меньше и компактнее */
         .achievement-slot {
-            height: 30px; /* Уменьшенная высота */
-            width: 50px; /* Фиксированная, маленькая ширина */
+            height: 30px;
+            width: 50px;
             min-width: 50px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px; /* Скругленная форма */
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -78,25 +108,28 @@
             transform: scale(1.05);
         }
 
-        /* --- СДВИГ КОНТЕНТА ВНИЗ --- */
+        /* --- СДВИГ КОНТЕНТА ВНИЗ ИСПРАВЛЕН --- */
         .content-wrapper {
-            /* Учитываем высоту блока top-fixed-elements и сдвигаем вниз */
-            padding-top: calc(env(safe-area-inset-top, 100px) + 70px); 
+            /* Высота top-fixed-elements + небольшой отступ */
+            /* Предположим, что top-fixed-elements занимает около 60-70px */
+            padding-top: calc(env(safe-area-inset-top, 20px) + 70px); 
             padding-bottom: env(safe-area-inset-bottom, 20px);
             max-width: 90%;
             margin: 0 auto;
+            position: relative; /* Чтобы контент был выше tap-zone */
+            z-index: 20;
+            min-height: calc(100vh - (env(safe-area-inset-top, 20px) + 70px)); 
+            box-sizing: border-box;
         }
 
-        /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
         .tap-zone {
             display: block;
             width: 100vw;
-            /* Высота на всю доступную область ниже контента */
             height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
-            background: transparent; /* ОСТАВЛЕНО ПРОЗРАЧНЫМ */
+            background: transparent;
             border: none;
             cursor: pointer;
             z-index: 10;
@@ -104,10 +137,9 @@
             padding: 0;
         }
 
-        /* --- ПОЗИЦИОНИРОВАНИЕ ВСЕГО КОНТЕНТА --- */
         .main-content {
              position: relative;
-             z-index: 20; /* Контент должен быть над кнопкой */
+             z-index: 20;
         }
         
         .cat-container {
@@ -138,10 +170,10 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* --- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ ПЕРЕНЕСЕНО ВВЕРХ --- */
+        /* --- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ (ОБЕСПЕЧЕНА ВИДИМОСТЬ) --- */
         .achievement {
             position: fixed;
-            top: 10%; /* Позиционируем сверху */
+            top: 10%; 
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
@@ -153,10 +185,10 @@
             font-weight: 600;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            z-index: 2000; /* Выше модального окна */
+            z-index: 2000;
             opacity: 0;
             transition: opacity 0.3s;
-            display: none;
+            /* Убрано display: none из CSS, так как оно блокирует переход opacity */
             pointer-events: none;
         }
 
@@ -169,17 +201,18 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
-            display: flex; /* Важно: display: none должен быть в JS */
+            /* Изначально скрыто через opacity и pointer-events */
             justify-content: center;
             align-items: center;
-            z-index: 5000; /* САМЫЙ ВЫСОКИЙ СЛОЙ */
+            z-index: 5000;
             opacity: 0;
             transition: opacity 0.3s ease;
-            pointer-events: none; /* Сначала неактивно */
+            pointer-events: none; 
+            display: flex; /* Обеспечиваем Flex для центрирования */
         }
         .modal.show {
             opacity: 1;
-            pointer-events: all; /* Делаем активным при показе */
+            pointer-events: all;
         }
         .modal-content {
             background: linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,46,0.95) 50%, rgba(22,33,62,0.95) 100%);
@@ -195,16 +228,21 @@
             max-width: 80%;
             box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
-        /* Прочие стили анимаций остаются без изменений */
-        @keyframes flash-strong {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
+        .close-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
         }
-        @keyframes blink-strong {
-            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
-            50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
+        .close-btn:hover {
+            background-color: #66BB6A;
         }
-        /* ... (остальные @keyframes) */
     </style>
 </head>
 <body>
@@ -235,7 +273,7 @@
                 <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
             </div>
             <div id="score">Очки уюта: 0</div>
-            <button onclick="showLeaderboard()">🏆 Показать топ</button>
+            <button class="close-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
             <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
         </div>
     </div>
@@ -306,7 +344,7 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_10_2025-11-10_16-54-08.jpg"
         ];
 
-        // --- Управление порогами для ачивок ---
+        // --- Управление порогами для ачивок (оставлено без изменений) ---
         const achievementThresholds = [1, 50];
         for (let i = 1; i <= 10000000; i++) {
             achievementThresholds.push(i * 100);
@@ -335,7 +373,6 @@
         const unlockedMilestones = new Set();
         const unlockedSupers = new Set();
         
-        // Маппинг для стилизации слотов вверху
         const achSlotMapping = { 
             100: 'ach-slot-100', 
             200: 'ach-slot-200', 
@@ -346,7 +383,7 @@
             10000: 'ach-slot-10000'
         }; 
 
-        // --- Вспомогательные функции (сохранены) ---
+        // --- Вспомогательные функции (исправлен вызов анимации) ---
 
         function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000, isCelebration = false) {
             const particle = document.createElement('div');
@@ -364,10 +401,12 @@
             particle.style.zIndex = '100';
 
             const randX = (Math.random() - 0.5) * (isCelebration ? 400 : 80);
-            particle.style.setProperty('--rand-x', randX + 'px');
+            // Устанавливаем CSS переменную для анимации
+            particle.style.setProperty('--rand-x', randX + 'px'); 
 
             const finalDuration = isCelebration ? duration : 1000;
-            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`;
+            // Используем восстановленное имя анимации
+            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`; 
 
             container.appendChild(particle);
 
@@ -388,7 +427,6 @@
             }
         }
 
-        // MILESTONE: Изменена анимация фона на более интенсивное мигание
         function launchMilestone() {
             if (unlockedMilestones.has(score)) return;
             unlockedMilestones.add(score);
@@ -398,10 +436,9 @@
                 setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
             }
 
-            // 1. Анимация фона на 6 секунд, мигающая сильнее
+            // Используем восстановленное имя анимации
             document.body.style.animation = `blink-strong 0.5s ease-in-out infinite`; 
             
-            // 2. Взрыв лапок и звёздочек
             const centerX = window.innerWidth / 2;
             const centerY = window.innerHeight / 2;
             const numParticles = 30;
@@ -420,18 +457,15 @@
                 }, delay);
             }
             
-            // 3. Отмена анимации через 6 секунд
             setTimeout(() => {
                 document.body.style.animation = '';
             }, CELEBRATION_DURATION_MS);
         }
 
-        // SUPER: Использована новая, более сильная анимация flash-strong
         function launchSuperEffect(threshold) {
             if (unlockedSupers.has(threshold)) return;
             unlockedSupers.add(threshold);
 
-            // 1. Массовый шторм эмодзи по всему экрану
             const numParticles = 100;
             const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
             const superColors = ['#ff69b4', '#ffd700', '#00ff00', '#ff00ff', '#ffff00', '#ff1493', '#00bfff', '#ff4500'];
@@ -444,14 +478,13 @@
                 setTimeout(() => createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true), delay);
             }
 
-            // 2. Сильное мигание котов (6 секунд)
             const cats = document.querySelectorAll('.cat');
+            // Используем восстановленное имя анимации
             cats.forEach(cat => {
                 cat.style.animation = 'flash-strong 0.3s ease-in-out infinite';
                 setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS);
             });
             
-            // 3. Радужный флеш фона с переходами (6 секунд)
             const originalBg = document.body.style.background;
             const flashes = [
                 'linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%)',
@@ -469,24 +502,22 @@
                 document.body.style.background = originalBg;
             }, CELEBRATION_DURATION_MS);
 
-            // 4. Интенсивная вибрация (6 секунд)
             if (tg.HapticFeedback) {
                 for (let v = 0; v < CELEBRATION_DURATION_MS / 300; v++) {
                     setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
                 }
             }
 
-            // 5. Специальное уведомление (СКОРРЕКТИРОВАНО)
             const achText = document.getElementById('ach-text');
             achText.innerText = `${threshold} тапов! 🌈💥`;
             const elem = document.getElementById('achievement');
-            elem.classList.add('show');
+            // Исправлено: просто добавляем класс 'show' для opacity 1
+            elem.classList.add('show'); 
             setTimeout(() => {
                 elem.classList.remove('show');
             }, CELEBRATION_DURATION_MS - 2000);
         }
 
-        // Achievement: Убрано слово "Достижение:"
         function showAchievement(threshold) {
             if (unlockedAchievements.has(threshold)) return;
             unlockedAchievements.add(threshold);
@@ -498,12 +529,12 @@
             const achText = document.getElementById('ach-text');
             achText.innerText = `${threshold} тапов! 🎉`;
             const elem = document.getElementById('achievement');
-            elem.classList.add('show');
+            // Исправлено: просто добавляем класс 'show' для opacity 1
+            elem.classList.add('show'); 
             setTimeout(() => {
                 elem.classList.remove('show');
             }, 3000);
             
-            // Разблокировка слота в гриде
             if (achSlotMapping[threshold]) {
                 const slotId = achSlotMapping[threshold];
                 const slot = document.getElementById(slotId);
@@ -515,18 +546,14 @@
         }
 
         function checkAchievement(newScore) {
-            // Округляем до ближайшей сотни/тысячи для проверки
             const checkScore = newScore % 100 === 0 ? newScore : (newScore % 50 === 0 ? newScore : newScore);
             
-            // 1. Проверка на СУПЕР (каждая 1000)
             if (superThresholds.includes(checkScore)) {
                 launchSuperEffect(checkScore);
             }
-            // 2. Проверка на MILESTONE (500, 1500, 2500...)
             else if (milestoneThresholds.includes(checkScore)) {
                 launchMilestone();
             }
-            // 3. Проверка на SALUTE (Каждая сотня, исключая MILESTONE и SUPER)
             else if (everyHundredThresholds.includes(checkScore)) {
                 const isMilestone = milestoneThresholds.includes(checkScore);
                 const isSuper = superThresholds.includes(checkScore);
@@ -536,37 +563,34 @@
                 }
             }
 
-            // 4. Проверка на обычную Ачивку (для уведомления)
             if (achievementThresholds.includes(checkScore)) {
                 showAchievement(checkScore);
             }
         }
 
+        // --- ИСПРАВЛЕННАЯ ЛОГИКА ОПРЕДЕЛЕНИЯ КООРДИНАТ ---
         function clickCat(catNumber, x, y) {
             score++;
             document.getElementById('score').innerText = `Очки уюта: ${score}`;
             checkAchievement(score);
 
-            // Получаем позицию клика
             let finalX, finalY;
             const cat = document.getElementById('cat' + catNumber);
-            const rect = cat.getBoundingClientRect();
             
-            // Если пришли координаты тапа с большой кнопки, используем их
             if (x !== undefined && y !== undefined) {
+                 // Координаты уже переданы из обработчика тапа
                  finalX = x;
                  finalY = y;
             } 
-            // Если кликнули прямо по коту, берем его центр
             else { 
+                // Резервный вариант, если кликнули прямо по коту, берем его центр
+                const rect = cat.getBoundingClientRect();
                 finalX = rect.left + rect.width / 2;
                 finalY = rect.top + rect.height / 2;
             }
 
-            // Создаём сердечко
             createParticle(finalX, finalY, '♥️', '#ff69b4');
 
-            // Меняем фото 
             if (catNumber === 1) {
                 cat1Index = (cat1Index + 1) % cat1Photos.length;
                 document.getElementById('cat1').src = cat1Photos[cat1Index];
@@ -575,7 +599,6 @@
                 document.getElementById('cat2').src = cat2Photos[cat2Index];
             }
 
-            // Автосейв счёта
             tg.GameProxy.setGameScore({ score: score }, (data) => {
                 if (data) {
                     // Score saved
@@ -587,23 +610,17 @@
             tg.GameProxy.showLeaderboard();
         }
 
-        // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАКРЫТИЯ МОДАЛЬНОГО ОКНА
         function closeModal() {
             const modal = document.getElementById('welcomeModal');
             modal.classList.remove('show');
-            // Опционально: можно начать игру только после закрытия модалки
-            // Например, включить музыку, если она была заблокирована.
             const audio = document.getElementById('backgroundMusic');
             audio.play().catch(e => console.log('Не удалось запустить звук'));
         }
         
-        // ЛОГИКА ДЛЯ БОЛЬШОЙ КНОПКИ
         function handleTapZone(e) {
             e.preventDefault();
 
-            let clientX;
-            let clientY;
-            // Определяем координаты
+            let clientX, clientY;
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
                 clientY = e.touches[0].clientY;
@@ -620,37 +637,44 @@
             
             let catToClick;
             
-            // Определяем сторону тапа
             if (clientX < center) {
-                catToClick = 1; // Шоколадный котик (Кеша)
+                catToClick = 1; 
             } else {
-                catToClick = 2; // Серебристый котик (Кекс)
+                catToClick = 2;
             }
             
-            // Вызываем основную функцию клика, передавая координаты тапа
             clickCat(catToClick, clientX, clientY);
         }
 
-        // Инициализация
         window.onload = function() {
-            // ПОКАЗЫВАЕМ МОДАЛЬНОЕ ОКНО ПРИ ЗАГРУЗКЕ
             const modal = document.getElementById('welcomeModal');
             modal.classList.add('show');
 
-            // Музыка будет запущена только после нажатия на кнопку в модалке (в closeModal)
             const audio = document.getElementById('backgroundMusic');
             audio.volume = 0.3;
 
-            // Добавляем обработчики для кликов/тапов
             const tapZone = document.getElementById('tapZone');
             tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
             tapZone.addEventListener('click', handleTapZone);
             
-            // Также оставляем обработчики на самих котах для более точного тапа/клика
             const cat1 = document.getElementById('cat1');
             const cat2 = document.getElementById('cat2');
-            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1, e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
-            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2, e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+            
+            // Важно: нужно передавать координаты тапа, если слушаем тач на самих котах
+            cat1.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                if (e.touches.length > 0) {
+                    clickCat(1, e.touches[0].clientX, e.touches[0].clientY); 
+                }
+            }, { passive: false });
+            cat2.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                 if (e.touches.length > 0) {
+                    clickCat(2, e.touches[0].clientX, e.touches[0].clientY); 
+                }
+            }, { passive: false });
+
+            // Для десктопного режима
             cat1.addEventListener('click', (e) => clickCat(1, e.clientX, e.clientY));
             cat2.addEventListener('click', (e) => clickCat(2, e.clientX, e.clientY));
         };
