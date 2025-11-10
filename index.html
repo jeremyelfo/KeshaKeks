@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Кеша и Кекс снимают стресс!</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet" />
     <style>
         :root {
             --celebration-duration: 6s;
         }
-
         body {
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
             text-align: center;
@@ -22,135 +21,147 @@
             position: relative;
             overflow: hidden;
             touch-action: manipulation;
-            /* Убедимся, что тело не сдвинуто слишком далеко */
-            padding-top: env(safe-area-inset-top, 0px); 
         }
 
-        /* --- АНИМАЦИИ ВОССТАНОВЛЕНЫ --- */
-        @keyframes floatUp {
-            0% {
-                transform: translate(0, 0) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--rand-x, 0), -200px) scale(0.5);
-                opacity: 0;
-            }
-        }
-        @keyframes flash-strong {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
-        }
-        @keyframes blink-strong {
-            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
-            50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
-        }
-        @keyframes super-flash {
-            0%, 100% { background: linear-gradient(135deg, #ff69b4, #00ffff); }
-            50% { background: linear-gradient(135deg, #ffff00, #ff1493); }
-        }
-        .heart {
-            position: absolute;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 0 0 2px rgba(0,0,0,0.5);
-        }
-        .achievement.show {
-            opacity: 1;
-        }
-        /* --- КОНЕЦ АНИМАЦИЙ --- */
-
-        /* --- НОВЫЕ БЛОКИ ДЛЯ ВЕРХА СТРАНИЦЫ --- */
+        /* Верхний фиксированный контейнер с учетом safe area Telegram */
         .top-fixed-elements {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            /* Учитываем Telegram header */
-            padding-top: calc(env(safe-area-inset-top, 20px) + 5px); 
+            padding-top: env(safe-area-inset-top, 20px);
+            background: transparent;
             z-index: 1000;
-            background: rgba(10, 10, 10, 0.5); /* Полупрозрачный фон, чтобы ачивки не сливались */
-            backdrop-filter: blur(5px);
+            user-select: none;
         }
 
-        .achievement-grid {
+        /* Верхний ряд маленьких ачивок */
+        .achievement-small-row {
             display: flex;
             justify-content: center;
-            gap: 5px;
-            padding: 5px 10px;
-            max-width: 95%;
-            margin: 0 auto;
+            gap: 8px;
+            padding: 5px 10px 0 10px;
+            max-width: 100%;
+            overflow-x: auto;
+            margin-bottom: 4px;
+        }
+        /* Маленькие ачивки-маркеры цель */
+        .achievement-small {
+            flex: 0 0 auto;
+            width: 50px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #999;
+            font-weight: 600;
+            cursor: default;
+            user-select: none;
+            white-space: nowrap;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .achievement-small.unlocked {
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            color: white;
+            border-color: #ff1493;
+            box-shadow: 0 0 8px #ff1493;
         }
 
+        /* Нижний ряд основных ачивок (3 колонки) */
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            padding: 0 10px 10px 10px;
+            max-width: 360px;
+            margin: 0 auto 8px auto;
+        }
         .achievement-slot {
-            height: 30px;
-            width: 50px;
-            min-width: 50px;
+            height: 40px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #b0b0b0;
             font-size: 10px;
-            font-weight: 500;
             overflow: hidden;
             transition: all 0.2s;
             cursor: pointer;
+            user-select: none;
         }
-
         .achievement-slot.unlocked {
             background: linear-gradient(45deg, #4CAF50 0%, #8BC34A 100%);
             color: #ffffff;
             font-weight: 700;
-            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
-            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
         }
 
-        /* --- СДВИГ КОНТЕНТА ВНИЗ ИСПРАВЛЕН --- */
+        /* Модальное окно */
+        #welcomeModal {
+            position: fixed;
+            top: env(safe-area-inset-top, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20,20,30,0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+            max-width: 320px;
+            width: 90vw;
+            z-index: 3000;
+            padding: 20px;
+            color: #eee;
+            font-size: 18px;
+            font-weight: 600;
+            user-select: none;
+            display: none;
+        }
+        #welcomeModal.show {
+            display: block;
+        }
+        #welcomeModal p {
+            margin: 0 0 15px 0;
+        }
+        #welcomeModal .close-btn {
+            background: #ff69b4;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.6);
+            transition: background-color 0.3s ease;
+        }
+        #welcomeModal .close-btn:hover {
+            background: #ff1493;
+        }
+
+        /* Контент ниже верхних элементов */
         .content-wrapper {
-            /* Высота top-fixed-elements + небольшой отступ */
-            /* Предположим, что top-fixed-elements занимает около 60-70px */
-            padding-top: calc(env(safe-area-inset-top, 20px) + 70px); 
+            padding-top: calc(env(safe-area-inset-top, 20px) + 90px);
             padding-bottom: env(safe-area-inset-bottom, 20px);
             max-width: 90%;
             margin: 0 auto;
-            position: relative; /* Чтобы контент был выше tap-zone */
-            z-index: 20;
-            min-height: calc(100vh - (env(safe-area-inset-top, 20px) + 70px)); 
-            box-sizing: border-box;
+            user-select: none;
         }
 
-        .tap-zone {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            z-index: 10;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-content {
-             position: relative;
-             z-index: 20;
-        }
-        
+        /* Котики */
         .cat-container {
             display: flex;
             justify-content: space-around;
             margin: 20px 0;
             gap: 20px;
             position: relative;
-            z-index: 20; 
+            z-index: 20; /* Над tap-zone */
         }
-
         .cat {
             width: 150px;
             height: 150px;
@@ -161,7 +172,11 @@
             border: 1px solid rgba(255,255,255,0.1);
             touch-action: manipulation;
         }
+        .cat:active {
+            transform: scale(0.98);
+        }
 
+        /* Заголовок и текст */
         h1 {
             color: #ffffff;
             font-size: 22px;
@@ -169,11 +184,48 @@
             margin: 0 0 10px 0;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
+        p {
+            color: #b0b0b0;
+            font-size: 14px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
 
-        /* --- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ (ОБЕСПЕЧЕНА ВИДИМОСТЬ) --- */
-        .achievement {
+        /* Большая круглая кнопка снизу */
+        #tapZone {
+            display: block;
             position: fixed;
-            top: 10%; 
+            bottom: env(safe-area-inset-bottom, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle at center, #ff69b4 40%, #ff1493 95%);
+            border-radius: 50%;
+            border: 3px solid #ff1493;
+            box-shadow: 0 0 15px #ff1493;
+            cursor: pointer;
+            z-index: 10;
+            touch-action: manipulation;
+            transition: box-shadow 0.3s ease;
+        }
+        #tapZone:active {
+            box-shadow: 0 0 25px #ff1493 inset;
+        }
+        #tapZone[aria-label] {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: 700;
+            user-select: none;
+        }
+
+        /* Ачивка-уведомление */
+        #achievement {
+            position: fixed;
+            bottom: 5%;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
@@ -188,106 +240,108 @@
             z-index: 2000;
             opacity: 0;
             transition: opacity 0.3s;
-            /* Убрано display: none из CSS, так как оно блокирует переход opacity */
+            display: none;
             pointer-events: none;
         }
-
-        /* --- ИСПРАВЛЕННЫЙ СТИЛЬ МОДАЛЬНОГО ОКНА --- */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
-            /* Изначально скрыто через opacity и pointer-events */
-            justify-content: center;
-            align-items: center;
-            z-index: 5000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none; 
-            display: flex; /* Обеспечиваем Flex для центрирования */
-        }
-        .modal.show {
+        #achievement.show {
             opacity: 1;
-            pointer-events: all;
+            display: block;
+            animation: bounceUp 0.5s ease;
         }
-        .modal-content {
-            background: linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,46,0.95) 50%, rgba(22,33,62,0.95) 100%);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 40px 20px;
-            text-align: center;
-            color: #ffffff;
-            font-family: 'SF Pro Display', sans-serif;
-            font-size: 18px;
-            font-weight: 500;
-            max-width: 80%;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+
+        /* Анимации */
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
+            }
         }
-        .close-btn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            margin-top: 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: background-color 0.3s;
+        @keyframes bounceUp {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(10px); }
+            60% { transform: translateX(-50%) translateY(5px); }
         }
-        .close-btn:hover {
-            background-color: #66BB6A;
+        @keyframes flash-strong {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+        @keyframes blink-strong {
+            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
+            50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            color: #ff69b4;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 1s ease-out forwards;
+            transform-origin: center;
+        }
+        .celebration-particle {
+            animation-duration: var(--celebration-duration);
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #b0b0b0;
+            white-space: nowrap;
+            z-index: 1;
+            user-select: none;
         }
     </style>
 </head>
 <body>
-    <div id="welcomeModal" class="modal">
-        <div class="modal-content">
-            <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
-            <button class="close-btn" onclick="closeModal()">Начать терапию!</button>
+    <div class="top-fixed-elements" aria-label="Ачивки и цели">
+        <div class="achievement-small-row" id="smallAchievements">
+            <!-- Маленькие ачивки (целевые) генерируем из набора -->
         </div>
-    </div>
-
-    <div class="top-fixed-elements">
         <div class="achievement-grid" id="achievementGrid">
-            <div id="ach-slot-100" class="achievement-slot" title="100 тапов">100 🐾</div>
-            <div id="ach-slot-200" class="achievement-slot" title="200 тапов">200 ✨</div>
-            <div id="ach-slot-500" class="achievement-slot" title="500 тапов">500 🌟</div>
-            <div id="ach-slot-1000" class="achievement-slot" title="1K тапов">1K 😻</div>
-            <div id="ach-slot-2000" class="achievement-slot" title="2K тапов">2K 💖</div>
-            <div id="ach-slot-5000" class="achievement-slot" title="5K тапов">5K 🎉</div>
-            <div id="ach-slot-10000" class="achievement-slot" title="10K тапов">10K 🏆</div>
+            <div id="ach-slot-1" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">100 🐾</div>
+            <div id="ach-slot-2" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">200 ✨</div>
+            <div id="ach-slot-3" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">500 🌟</div>
+            <div id="ach-slot-4" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">1K 😻</div>
+            <div id="ach-slot-5" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">2K 💖</div>
+            <div id="ach-slot-6" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">5K 🎉</div>
         </div>
     </div>
 
-    <div class="content-wrapper">
-        <div class="main-content">
-            <h1>Кеша и Кекс снимают стресс!❤️</h1>
-            <div class="cat-container" id="catContainer">
-                <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)">
-                <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
-            </div>
-            <div id="score">Очки уюта: 0</div>
-            <button class="close-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
-            <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
+    <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+        <p id="welcomeTitle">Привет, Никчёмни, вкусни принёсб?! 😻</p>
+        <button class="close-btn" onclick="closeModal()">Начать терапию!</button>
+    </div>
+
+    <div class="content-wrapper" role="main">
+        <h1>Кеша и Кекс снимают стресс!❤️</h1>
+        <div class="cat-container" id="catContainer">
+            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)" />
+            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)" />
         </div>
+        <div id="score">Очки уюта: 0</div>
+        <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
     </div>
 
     <button id="tapZone" class="tap-zone" aria-label="Большая кнопка для тапов"></button>
 
-    <div id="achievement" class="achievement">
+    <div id="achievement" class="achievement" role="alert" aria-live="assertive">
         <span id="ach-text"></span> 🏆
     </div>
-    
+
     <audio id="backgroundMusic" loop autoplay>
-        <source src="mur.mp3" type="audio/mpeg">
+        <source src="mur.mp3" type="audio/mpeg" />
         Ваш браузер не поддерживает аудио.
     </audio>
+
+    <div id="footer">Kesha and Keks (v0.3) powered by Jeremy Elfo (c) 2025</div>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -299,7 +353,7 @@
         let cat2Index = 0;
         const CELEBRATION_DURATION_MS = 6000;
 
-        // Массивы с фото (оставлены без изменений)
+        // Массивы с фото (без изменений, вставлены для полноты)
         const cat1Photos = [
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2556.jpeg",
@@ -321,6 +375,7 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_14_2025-11-10_16-54-08.jpg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/photo_11_2025-11-10_16-54-08.jpg"
         ];
+
         const cat2Photos = [
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg",
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2552.jpeg",
@@ -344,46 +399,24 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_10_2025-11-10_16-54-08.jpg"
         ];
 
-        // --- Управление порогами для ачивок (оставлено без изменений) ---
-        const achievementThresholds = [1, 50];
-        for (let i = 1; i <= 10000000; i++) {
-            achievementThresholds.push(i * 100);
-            achievementThresholds.push(i * 100 + 50);
-        }
-        
-        const everyHundredThresholds = [];
-        for (let i = 1; i <= 10000000; i++) {
-            everyHundredThresholds.push(i * 100);
-        }
-
-        const milestoneThresholds = [];
-        for (let k = 0; k <= 999999; k++) {
-            const thresh = 500 + (k * 1000);
-            if (thresh <= 1000000000) {
-                milestoneThresholds.push(thresh);
-            }
-        }
-
-        const superThresholds = [];
-        for (let i = 1; i <= 1000000; i++) {
-            superThresholds.push(i * 1000);
-        }
+        const achievementThresholds = [100, 200, 500, 1000, 2000, 5000];
+        const smallGoals = [50, 150, 300, 700, 1500, 3000];
 
         const unlockedAchievements = new Set();
-        const unlockedMilestones = new Set();
-        const unlockedSupers = new Set();
-        
-        const achSlotMapping = { 
-            100: 'ach-slot-100', 
-            200: 'ach-slot-200', 
-            500: 'ach-slot-500', 
-            1000: 'ach-slot-1000', 
-            2000: 'ach-slot-2000', 
-            5000: 'ach-slot-5000',
-            10000: 'ach-slot-10000'
-        }; 
 
-        // --- Вспомогательные функции (исправлен вызов анимации) ---
+        // Создаем малые целевые ачивки динамически в маленький ряд
+        function renderSmallAchievements() {
+            const container = document.getElementById('smallAchievements');
+            container.innerHTML = '';
+            smallGoals.forEach(thresh => {
+                const div = document.createElement('div');
+                div.classList.add('achievement-small');
+                if (unlockedAchievements.has(thresh)) div.classList.add('unlocked');
+                div.innerText = `${thresh} тапов`;
+                div.title = unlockedAchievements.has(thresh) ? `Разблокировано ${thresh} тапов` : `Цель: ${thresh} тапов`;
+                container.appendChild(div);
+            });
+        }
 
         function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000, isCelebration = false) {
             const particle = document.createElement('div');
@@ -392,203 +425,38 @@
             if (isCelebration) {
                 particle.classList.add('celebration-particle');
             }
-
             particle.style.left = x + 'px';
             particle.style.top = y + 'px';
             particle.style.color = color;
             particle.style.fontSize = (24 + Math.random() * 12) + 'px';
             particle.style.pointerEvents = 'none';
             particle.style.zIndex = '100';
-
             const randX = (Math.random() - 0.5) * (isCelebration ? 400 : 80);
-            // Устанавливаем CSS переменную для анимации
-            particle.style.setProperty('--rand-x', randX + 'px'); 
-
+            particle.style.setProperty('--rand-x', randX + 'px');
             const finalDuration = isCelebration ? duration : 1000;
-            // Используем восстановленное имя анимации
-            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`; 
-
+            particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`;
             container.appendChild(particle);
-
             setTimeout(() => {
                 particle.remove();
             }, finalDuration);
         }
 
-        function launchSalute() {
-            const numHearts = 50;
-            for (let i = 0; i < numHearts; i++) {
-                const x = Math.random() * window.innerWidth;
-                const y = Math.random() * window.innerHeight;
-                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body, CELEBRATION_DURATION_MS, true), i * 50);
-            }
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('heavy');
-            }
-        }
-
-        function launchMilestone() {
-            if (unlockedMilestones.has(score)) return;
-            unlockedMilestones.add(score);
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('heavy');
-                setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
-            }
-
-            // Используем восстановленное имя анимации
-            document.body.style.animation = `blink-strong 0.5s ease-in-out infinite`; 
-            
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            const numParticles = 30;
-            const emojis = ['🐾', '⭐', '✨', '🐱'];
-            const colors = ['#ffd700', '#00ff00', '#ff00ff', '#ffff00'];
-            for (let i = 0; i < numParticles; i++) {
-                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const delay = i * 30;
-                setTimeout(() => {
-                    const angle = (i / numParticles) * Math.PI * 2 + Math.random() * Math.PI/4;
-                    const dist = 200 + Math.random() * 200;
-                    const x = centerX + Math.cos(angle) * dist;
-                    const y = centerY + Math.sin(angle) * dist;
-                    createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true);
-                }, delay);
-            }
-            
-            setTimeout(() => {
-                document.body.style.animation = '';
-            }, CELEBRATION_DURATION_MS);
-        }
-
-        function launchSuperEffect(threshold) {
-            if (unlockedSupers.has(threshold)) return;
-            unlockedSupers.add(threshold);
-
-            const numParticles = 100;
-            const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
-            const superColors = ['#ff69b4', '#ffd700', '#00ff00', '#ff00ff', '#ffff00', '#ff1493', '#00bfff', '#ff4500'];
-            for (let i = 0; i < numParticles; i++) {
-                const emoji = superEmojis[Math.floor(Math.random() * superEmojis.length)];
-                const color = superColors[Math.floor(Math.random() * superColors.length)];
-                const x = Math.random() * window.innerWidth;
-                const y = Math.random() * window.innerHeight;
-                const delay = i * 20;
-                setTimeout(() => createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true), delay);
-            }
-
-            const cats = document.querySelectorAll('.cat');
-            // Используем восстановленное имя анимации
-            cats.forEach(cat => {
-                cat.style.animation = 'flash-strong 0.3s ease-in-out infinite';
-                setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS);
-            });
-            
-            const originalBg = document.body.style.background;
-            const flashes = [
-                'linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%)',
-                'linear-gradient(135deg, #ffd700 0%, #ffff00 50%, #ff4500 100%)',
-                'linear-gradient(135deg, #00ff00 0%, #00bfff 50%, #0000ff 100%)',
-                'linear-gradient(135deg, #ff00ff 0%, #8a2be2 50%, #4b0082 100%)'
-            ];
-            let flashIndex = 0;
-            const flashInterval = setInterval(() => {
-                document.body.style.background = flashes[flashIndex % flashes.length];
-                flashIndex++;
-            }, 200);
-            setTimeout(() => {
-                clearInterval(flashInterval);
-                document.body.style.background = originalBg;
-            }, CELEBRATION_DURATION_MS);
-
-            if (tg.HapticFeedback) {
-                for (let v = 0; v < CELEBRATION_DURATION_MS / 300; v++) {
-                    setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
-                }
-            }
-
-            const achText = document.getElementById('ach-text');
-            achText.innerText = `${threshold} тапов! 🌈💥`;
-            const elem = document.getElementById('achievement');
-            // Исправлено: просто добавляем класс 'show' для opacity 1
-            elem.classList.add('show'); 
-            setTimeout(() => {
-                elem.classList.remove('show');
-            }, CELEBRATION_DURATION_MS - 2000);
-        }
-
-        function showAchievement(threshold) {
-            if (unlockedAchievements.has(threshold)) return;
-            unlockedAchievements.add(threshold);
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
-
-            const achText = document.getElementById('ach-text');
-            achText.innerText = `${threshold} тапов! 🎉`;
-            const elem = document.getElementById('achievement');
-            // Исправлено: просто добавляем класс 'show' для opacity 1
-            elem.classList.add('show'); 
-            setTimeout(() => {
-                elem.classList.remove('show');
-            }, 3000);
-            
-            if (achSlotMapping[threshold]) {
-                const slotId = achSlotMapping[threshold];
-                const slot = document.getElementById(slotId);
-                if (slot) {
-                    slot.classList.add('unlocked');
-                    slot.onclick = () => alert(`Ачивка разблокирована: ${threshold} тапов!`);
-                }
-            }
-        }
-
-        function checkAchievement(newScore) {
-            const checkScore = newScore % 100 === 0 ? newScore : (newScore % 50 === 0 ? newScore : newScore);
-            
-            if (superThresholds.includes(checkScore)) {
-                launchSuperEffect(checkScore);
-            }
-            else if (milestoneThresholds.includes(checkScore)) {
-                launchMilestone();
-            }
-            else if (everyHundredThresholds.includes(checkScore)) {
-                const isMilestone = milestoneThresholds.includes(checkScore);
-                const isSuper = superThresholds.includes(checkScore);
-
-                if (!isMilestone && !isSuper) {
-                    launchSalute();
-                }
-            }
-
-            if (achievementThresholds.includes(checkScore)) {
-                showAchievement(checkScore);
-            }
-        }
-
-        // --- ИСПРАВЛЕННАЯ ЛОГИКА ОПРЕДЕЛЕНИЯ КООРДИНАТ ---
+        // Основной клик по коту
         function clickCat(catNumber, x, y) {
             score++;
             document.getElementById('score').innerText = `Очки уюта: ${score}`;
             checkAchievement(score);
 
             let finalX, finalY;
-            const cat = document.getElementById('cat' + catNumber);
-            
-            if (x !== undefined && y !== undefined) {
-                 // Координаты уже переданы из обработчика тапа
-                 finalX = x;
-                 finalY = y;
-            } 
-            else { 
-                // Резервный вариант, если кликнули прямо по коту, берем его центр
+            if (catNumber === 1 || catNumber === 2) {
+                const cat = document.getElementById('cat' + catNumber);
                 const rect = cat.getBoundingClientRect();
                 finalX = rect.left + rect.width / 2;
                 finalY = rect.top + rect.height / 2;
+            } else {
+                finalX = x;
+                finalY = y;
             }
-
             createParticle(finalX, finalY, '♥️', '#ff69b4');
 
             if (catNumber === 1) {
@@ -600,85 +468,88 @@
             }
 
             tg.GameProxy.setGameScore({ score: score }, (data) => {
-                if (data) {
-                    // Score saved
-                }
+                // Score saved
             });
         }
 
-        function showLeaderboard() {
-            tg.GameProxy.showLeaderboard();
+        function showAchievement(threshold) {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+            unlockedAchievements.add(threshold);
+            renderSmallAchievements();
+
+            const achText = document.getElementById('ach-text');
+            achText.innerText = `${threshold} тапов! 🎉`;
+            const elem = document.getElementById('achievement');
+            elem.classList.add('show');
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, 3000);
+
+            // Обновляем ячейку в гриде
+            const achSlotMapping = { 100: 1, 200: 2, 500: 3, 1000: 4, 2000: 5, 5000: 6 };
+            if (achSlotMapping[threshold]) {
+                const slot = document.getElementById(`ach-slot-${achSlotMapping[threshold]}`);
+                if (slot) {
+                    slot.classList.add('unlocked');
+                    slot.onclick = () => alert(`Ачивка разблокирована: ${threshold} тапов!`);
+                }
+            }
         }
 
-        function closeModal() {
-            const modal = document.getElementById('welcomeModal');
-            modal.classList.remove('show');
-            const audio = document.getElementById('backgroundMusic');
-            audio.play().catch(e => console.log('Не удалось запустить звук'));
+        function checkAchievement(newScore) {
+            if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
+                showAchievement(newScore);
+            }
         }
-        
+
+        // Обработчик большой кнопки
         function handleTapZone(e) {
             e.preventDefault();
-
-            let clientX, clientY;
+            let clientX;
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
             } else if (e.clientX !== undefined) {
                 clientX = e.clientX;
-                clientY = e.clientY;
             } else {
                 return;
             }
-
-            const button = e.currentTarget;
-            const rect = button.getBoundingClientRect();
+            const rect = e.currentTarget.getBoundingClientRect();
             const center = rect.left + rect.width / 2;
-            
-            let catToClick;
-            
-            if (clientX < center) {
-                catToClick = 1; 
-            } else {
-                catToClick = 2;
-            }
-            
-            clickCat(catToClick, clientX, clientY);
+            const tapX = clientX;
+            const tapY = rect.top + rect.height / 2;
+
+            let catToClick = tapX < center ? 1 : 2;
+            clickCat(catToClick, tapX, tapY);
+        }
+
+        function closeModal() {
+            document.getElementById('welcomeModal').classList.remove('show');
         }
 
         window.onload = function() {
+            // Показываем модальное окно при запуске
             const modal = document.getElementById('welcomeModal');
             modal.classList.add('show');
 
             const audio = document.getElementById('backgroundMusic');
             audio.volume = 0.3;
+            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
+            
+            const cat1 = document.getElementById('cat1');
+            const cat2 = document.getElementById('cat2');
+            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1); }, { passive: false });
+            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2); }, { passive: false });
+            cat1.addEventListener('click', () => clickCat(1));
+            cat2.addEventListener('click', () => clickCat(2));
 
             const tapZone = document.getElementById('tapZone');
             tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
             tapZone.addEventListener('click', handleTapZone);
-            
-            const cat1 = document.getElementById('cat1');
-            const cat2 = document.getElementById('cat2');
-            
-            // Важно: нужно передавать координаты тапа, если слушаем тач на самих котах
-            cat1.addEventListener('touchstart', (e) => { 
-                e.preventDefault(); 
-                if (e.touches.length > 0) {
-                    clickCat(1, e.touches[0].clientX, e.touches[0].clientY); 
-                }
-            }, { passive: false });
-            cat2.addEventListener('touchstart', (e) => { 
-                e.preventDefault(); 
-                 if (e.touches.length > 0) {
-                    clickCat(2, e.touches[0].clientX, e.touches[0].clientY); 
-                }
-            }, { passive: false });
 
-            // Для десктопного режима
-            cat1.addEventListener('click', (e) => clickCat(1, e.clientX, e.clientY));
-            cat2.addEventListener('click', (e) => clickCat(2, e.clientX, e.clientY));
+            renderSmallAchievements();
         };
     </script>
-    <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 </body>
 </html>
