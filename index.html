@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кеша и Кекс снимают стресс!</title>
+    <title>Котик-Кликер: Два Мурлыки!</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: Arial; text-align: center; background: #f0f8ff; }
-        #cat-image { width: 200px; height: 200px; cursor: pointer; margin: 20px; border-radius: 50%; }
+        body { font-family: Arial; text-align: center; background: #f0f8ff; padding: 20px; }
+        .cat-container { display: flex; justify-content: space-around; margin: 20px 0; }
+        .cat { width: 150px; height: 150px; cursor: pointer; border-radius: 50%; transition: transform 0.1s; }
+        .cat:hover { transform: scale(1.05); }
+        .cat1 { border: 3px solid #8B4513; } /* Шоколадный — коричневая рамка */
+        .cat2 { border: 3px solid #C0C0C0; } /* Серебристый — серая рамка */
         button { padding: 10px 20px; font-size: 16px; margin: 10px; }
-        #score { font-size: 24px; color: #333; }
+        #score { font-size: 24px; color: #333; margin: 20px; }
+        h1 { color: #4A4A4A; }
     </style>
 </head>
 <body>
-    <h1>Поглаживай котика! 🐱</h1>
-    <img id="cat-image" src="https://via.placeholder.com/200?text=🐱" alt="Котик" onclick="clickCat()">
+    <h1>Поглаживай котиков! 🐱🐱</h1>
+    <div class="cat-container">
+        <img id="cat1" class="cat cat1" src="https://via.placeholder.com/150/ffdbac/ff8c00?text=Шоколадный+1" alt="Шоколадный котик" onclick="clickCat(1)">
+        <img id="cat2" class="cat cat2" src="https://via.placeholder.com/150/e6e6fa/708090?text=Серебристый+1" alt="Серебристый котик" onclick="clickCat(2)">
+    </div>
     <div id="score">Очки: 0</div>
     <button onclick="showLeaderboard()">Показать топ</button>
-    <p>Твои котики мурлычут от радости!</p>
+    <p>Котики мурлычут в унисон! Общий счёт растёт от обоих. 😻</p>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -25,14 +33,43 @@
         tg.expand(); // Полноэкранный режим
 
         let score = 0;
-        function clickCat() {
+        let cat1Index = 0; // Индекс фото для шоколадного
+        let cat2Index = 0; // Для серебристого
+
+        // Массивы с фото (замени на реальные URL из репо)
+        const cat1Photos = [
+            "https://via.placeholder.com/150/ffdbac/ff8c00?text=Шоколадный+1",
+            "https://via.placeholder.com/150/ffdbac/ff8c00?text=Шоколадный+2",
+            "https://via.placeholder.com/150/ffdbac/ff8c00?text=Шоколадный+3",
+            "https://via.placeholder.com/150/ffdbac/ff8c00?text=Шоколадный+4",
+            "https://via.placeholder.com/150/ffdbac/ff8c00?text=Шоколадный+5"
+        ];
+        const cat2Photos = [
+            "https://via.placeholder.com/150/e6e6fa/708090?text=Серебристый+1",
+            "https://via.placeholder.com/150/e6e6fa/708090?text=Серебристый+2",
+            "https://via.placeholder.com/150/e6e6fa/708090?text=Серебристый+3",
+            "https://via.placeholder.com/150/e6e6fa/708090?text=Серебристый+4",
+            "https://via.placeholder.com/150/e6e6fa/708090?text=Серебристый+5"
+        ];
+
+        function clickCat(catNumber) {
             score++;
             document.getElementById('score').innerText = `Очки: ${score}`;
-            // Отправляем счёт в Telegram (для лидерборда)
+
+            // Меняем фото выбранного кота
+            if (catNumber === 1) {
+                cat1Index = (cat1Index + 1) % cat1Photos.length;
+                document.getElementById('cat1').src = cat1Photos[cat1Index];
+            } else {
+                cat2Index = (cat2Index + 1) % cat2Photos.length;
+                document.getElementById('cat2').src = cat2Photos[cat2Index];
+            }
+
+            // Отправляем общий счёт в Telegram
             tg.MainButton.setText(`Очки: ${score}`);
             tg.MainButton.show();
             tg.GameProxy.setGameScore({ score: score }, (data) => {
-                if (data) tg.showAlert('Счёт сохранён! Ты в топе?');
+                if (data) tg.showAlert('Муррр! Счёт обновлён!');
             });
         }
 
@@ -40,8 +77,8 @@
             tg.GameProxy.showLeaderboard();
         }
 
-        // Инициализация
-        tg.MainButton.setText('Сохранить счёт').onClick(clickCat).show();
+        // Инициализация кнопки
+        tg.MainButton.setText('Сохранить поглаживания').onClick(() => { /* Можно добавить автосейв */ }).show();
     </script>
 </body>
 </html>
