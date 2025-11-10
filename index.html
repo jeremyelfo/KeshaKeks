@@ -603,6 +603,17 @@
 
 
 
+    <div id="nameModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-content">
+            <h2>Имя в лидерборде</h2>
+            <input id="nameInput" type="text" maxlength="24" placeholder="Введите имя" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;outline:none;">
+            <div style="height:8px"></div>
+            <button class="primary-btn primary-btn--full" onclick="saveName()">Сохранить</button>
+            <div style="height:8px"></div>
+            <button class="primary-btn primary-btn--full" onclick="(function(m){m=document.getElementById('nameModal');m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.classList.remove('has-modal');})()">Отмена</button>
+        </div>
+    </div>
+
     <div class="content-wrapper">
 
         <h1>Кеша и Кекс снимают стресс!❤️</h1>
@@ -618,6 +629,7 @@
         <div id="score">Очки уюта: 0</div>
 
         <button class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
+        <button class="primary-btn" onclick="openNameModal()">📝 Имя</button>
 
         <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
 
@@ -711,6 +723,18 @@
         }
 
         // Функции работы с Supabase
+        // Helpers for username management and RPC fallback
+        function getStoredDisplayName() {
+            try { return localStorage.getItem('kk_display_name') || ''; } catch (_) { return ''; }
+        }
+        function setStoredDisplayName(name) {
+            try { localStorage.setItem('kk_display_name', name); } catch (_) {}
+        }
+        function getEffectiveUsername(defaultUsername) {
+            const saved = (getStoredDisplayName() || '').trim();
+            return saved || (defaultUsername || 'Аноним');
+        }
+
         async function updateScore(telegramId, username, newScore) {
             if (!supabaseClient) {
                 console.warn('[updateScore] Supabase клиент не инициализирован');
@@ -740,9 +764,27 @@
 
                 // Обновляем только если новый счёт больше текущего максимума
                 if (newScore > currentMax) {
+                    const effectiveUsername = getEffectiveUsername(username);
+                    // Сначала пробуем атомарный RPC set_max_score (если функция создана в БД)
+                    try {
+                        const { error: rpcError } = await supabaseClient.rpc('set_max_score', {
+                            p_telegram_id: userId,
+                            p_username: effectiveUsername,
+                            p_new_score: newScore
+                        });
+                        if (!rpcError) {
+                            console.log('[updateScore] RPC set_max_score: успех');
+                            return;
+                        } else {
+                            console.warn('[updateScore] RPC set_max_score: ошибка, fallback на upsert', rpcError);
+                        }
+                    } catch (e) {
+                        console.warn('[updateScore] RPC вызов не удался, fallback на upsert', e);
+                    }
+
                     const recordData = {
                         telegram_id: userId,
-                        username: username || 'Аноним',
+                        username: effectiveUsername,
                         max_score: newScore,
                         updated_at: new Date().toISOString()
                     };
@@ -1634,6 +1676,64 @@
 
         }
 
+        // Имя пользователя (лидерборд)
+        function openNameModal() {
+            const m = document.getElementById('nameModal');
+            const input = document.getElementById('nameInput');
+            if (!m || !input) return;
+            input.value = getStoredDisplayName() || (tg.initDataUnsafe?.user?.username || '');
+            m.classList.add('show');
+            m.setAttribute('aria-hidden','false');
+            document.body.classList.add('has-modal');
+            input.focus();
+        }
+        async function saveName() {
+            try {
+                const input = document.getElementById('nameInput');
+                const newName = (input?.value || '').trim().slice(0, 24);
+                if (!newName) return;
+                setStoredDisplayName(newName);
+                const user = tg.initDataUnsafe?.user;
+                if (!user || !supabaseClient) return;
+                const userId = user.id;
+                // Получим текущий максимум, чтобы не понизить его в fallback-пути
+                const { data: cur, error: curErr } = await supabaseClient
+                    .from('leaderboard')
+                    .select('max_score')
+                    .eq('telegram_id', userId)
+                    .maybeSingle();
+                const currentMax = (cur && typeof cur.max_score === 'number') ? cur.max_score : 0;
+                // Попробуем RPC (если функция создана)
+                let rpcOk = false;
+                try {
+                    const { error: rpcError } = await supabaseClient.rpc('set_max_score', {
+                        p_telegram_id: userId,
+                        p_username: newName,
+                        p_new_score: currentMax
+                    });
+                    if (!rpcError) rpcOk = true;
+                } catch (_) {}
+                if (!rpcOk) {
+                    // Fallback: если строка есть — update username; если нет — upsert с сохранением текущего max_score
+                    const { data: updData, error: updErr } = await supabaseClient
+                        .from('leaderboard')
+                        .update({ username: newName, updated_at: new Date().toISOString() })
+                        .eq('telegram_id', userId)
+                        .select();
+                    if (updErr || !updData || updData.length === 0) {
+                        await supabaseClient
+                            .from('leaderboard')
+                            .upsert({ telegram_id: userId, username: newName, max_score: currentMax, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' })
+                            .select();
+                    }
+                }
+                const m = document.getElementById('nameModal');
+                if (m) { m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.classList.remove('has-modal'); }
+            } catch (e) {
+                console.warn('[saveName] error', e);
+            }
+        }
+
         
 
         // --- НОВАЯ ЛОГИКА ДЛЯ БОЛЬШОЙ КРУГЛОЙ КНОПКИ ---
@@ -1784,9 +1884,17 @@
                 console.warn('Элемент tapZone не найден');
             }
 
-            // Debug: open debug modal
-            const debugBtn = document.getElementById('debugBtn');
-            if (debugBtn) { debugBtn.addEventListener('click', openDebugModal); }
+            // Debug: скрытая активация — 5 кликов по футеру за 1.5с
+            const footer = document.getElementById('footer');
+            if (footer) {
+                let taps = [];
+                footer.addEventListener('click', () => {
+                    const now = Date.now();
+                    taps = taps.filter(t => now - t < 1500);
+                    taps.push(now);
+                    if (taps.length >= 5) { openDebugModal(); taps = []; }
+                });
+            }
 
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
@@ -1814,7 +1922,6 @@
         </div>
     </div>
 
-    <button id="debugBtn" class="debug-fab" title="Debug">🐞</button>
 
 </body>
 
