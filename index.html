@@ -98,10 +98,10 @@
             font-size: 14px;
             margin-top: 15px;
         }
-        /* Ачивка-уведомление: адаптировано под тёмную тему, теперь внизу */
+        /* Ачивка-уведомление: адаптировано под тёмную тему, теперь ближе к низу */
         .achievement {
             position: fixed;
-            bottom: 20%; /* В нижней части экрана */
+            bottom: 5%; /* Ближе к нижнему краю */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8); /* Тёмный фон */
@@ -260,39 +260,50 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg"
         ];
 
-        // Расширенные пороги для ачивок (добавлены 1 и 50)
-        const achievementThresholds = [
-            1, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
-            10999, 11999, 12999, 13999, 14999, 15999, 16999, 17999, 18999, 19999,
-            1300, 1500, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
-            6000, 7000, 8000, 9000, 9999, 25000, 30000, 40000, 50000, 75000, 100000
-        ];
+        // Расширенные пороги для ачивок: 1, 50 + каждые 100 до 500000
+        const achievementThresholds = [1, 50];
+        for (let i = 1; i <= 5000; i++) {
+            achievementThresholds.push(i * 100);
+        }
         const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
 
-        // Пороги для салюта
-        const saluteThresholds = [
-            100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 9999,
-            10999, 11999, 12999, 13999, 14999, 15999, 16999, 17999, 18999, 19999,
-            25000, 30000, 40000, 50000, 75000, 100000
-        ];
+        // Пороги для салюта: 100 + каждые 1000 от 1000 до 500000
+        const saluteThresholds = [100];
+        for (let i = 1; i <= 500; i++) {
+            saluteThresholds.push(i * 1000);
+        }
 
-        function createHeart(x, y, container = document.body) {
-            const heart = document.createElement('div');
-            heart.innerHTML = '♥️';
-            heart.className = 'heart';
-            heart.style.left = x + 'px';
-            heart.style.top = y + 'px';
-            // Случайный сдвиг по X для разнообразия (-20 to +20 px)
-            const randX = (Math.random() - 0.5) * 40;
-            heart.style.setProperty('--rand-x', randX + 'px');
-            // Случайный размер для милоты
-            const randSize = 0.8 + Math.random() * 0.4;
-            heart.style.fontSize = (24 * randSize) + 'px';
-            container.appendChild(heart);
+        // Пороги для milestone-эффекта (500, 1500, 2500, ... до 500000)
+        const milestoneThresholds = [];
+        for (let k = 0; k <= 499; k++) {
+            const thresh = 500 + (k * 1000);
+            if (thresh <= 500000) {
+                milestoneThresholds.push(thresh);
+            }
+        }
+        const unlockedMilestones = new Set(); // Чтобы не повторять
+
+        function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000) {
+            const particle = document.createElement('div');
+            particle.innerHTML = emoji;
+            particle.className = 'heart'; // Переиспользуем класс для анимации
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.color = color;
+            particle.style.fontSize = (24 + Math.random() * 12) + 'px'; // Немного вариации размера
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '100';
+            // Случайный сдвиг по X и угол для milestone
+            const randX = (Math.random() - 0.5) * 80;
+            const randAngle = (Math.random() - 0.5) * 720; // Больше поворота
+            particle.style.setProperty('--rand-x', randX + 'px');
+            // Кастомная анимация для milestone: дальше и быстрее
+            particle.style.animation = `floatUp ${duration / 1000}s ease-out forwards`;
+            container.appendChild(particle);
             // Удаляем после анимации
             setTimeout(() => {
-                heart.remove();
-            }, 1000);
+                particle.remove();
+            }, duration);
         }
 
         // Функция салюта: много сердечек по экрану
@@ -303,12 +314,46 @@
                 const x = Math.random() * window.innerWidth;
                 const y = Math.random() * window.innerHeight;
                 // Добавляем задержку для волны
-                setTimeout(() => createHeart(x, y, document.body), i * 50);
+                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body), i * 50);
             }
             // Вибрация
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
             }
+        }
+
+        // Функция milestone: взрыв лапок и звёздочек из центра (вау-эффект)
+        function launchMilestone() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const numParticles = 30;
+            const emojis = ['🐾', '⭐', '✨', '🐱']; // Крутые эмодзи для вау
+            const colors = ['#ffd700', '#00ff00', '#ff00ff', '#ffff00']; // Золотой, зелёный, фиолетовый, жёлтый
+            for (let i = 0; i < numParticles; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const delay = i * 30; // Волна
+                setTimeout(() => {
+                    // Расходимся от центра с рандомным направлением
+                    const angle = (i / numParticles) * Math.PI * 2;
+                    const dist = 200 + Math.random() * 200;
+                    const x = centerX + Math.cos(angle) * dist;
+                    const y = centerY + Math.sin(angle) * dist;
+                    createParticle(x, y, emoji, color, document.body, 1500); // Дольше анимация
+                }, delay);
+            }
+            // Сильная вибрация
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+                setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
+            }
+            // Короткий флеш фона для вау
+            document.body.style.transition = 'background 0.3s ease';
+            document.body.style.background = 'linear-gradient(135deg, #ff69b4 0%, #1a1a2e 50%, #16213e 100%)';
+            setTimeout(() => {
+                document.body.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)';
+                document.body.style.transition = '';
+            }, 300);
         }
 
         function showAchievement(threshold) {
@@ -334,6 +379,11 @@
                 if (saluteThresholds.includes(newScore)) {
                     launchSalute();
                 }
+                // Проверяем на milestone
+                if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
+                    unlockedMilestones.add(newScore);
+                    launchMilestone();
+                }
             }
         }
 
@@ -350,7 +400,7 @@
             const y = rect.top - containerRect.top + rect.height / 2;
 
             // Создаём сердечко
-            createHeart(x, y);
+            createParticle(x, y, '♥️', '#ff69b4');
 
             // Меняем фото выбранного кота
             if (catNumber === 1) {
@@ -398,4 +448,3 @@
         }).show();
     </script>
 </body>
-</html>
