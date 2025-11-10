@@ -202,6 +202,15 @@
         .close-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
+        /* Анимация мигания для супер-эффекта */
+        @keyframes flash {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+        @keyframes blink {
+            0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
+            50% { background: linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%); }
+        }
     </style>
 </head>
 <body>
@@ -260,28 +269,42 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg"
         ];
 
-        // Расширенные пороги для ачивок: 1, 50 + каждые 100 до 500000
+        // Расширенные пороги для ачивок: 1, 50 + каждые 100 до 1000000000, плюс дополнительные 150, 250, 350 и т.д.
         const achievementThresholds = [1, 50];
-        for (let i = 1; i <= 5000; i++) {
+        for (let i = 1; i <= 10000000; i++) { // До 1e9 (1000000000 / 100 = 10M итераций, но JS справится)
             achievementThresholds.push(i * 100);
+        }
+        // Добавляем дополнительные: 150, 250, 350, ..., до 1e9
+        for (let i = 1; i <= 10000000; i++) {
+            const extra = 100 * i + 50;
+            if (extra <= 1000000000) {
+                achievementThresholds.push(extra);
+            }
         }
         const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
 
-        // Пороги для салюта: 100 + каждые 1000 от 1000 до 500000
+        // Пороги для салюта: 100 + каждые 1000 от 1000 до 1000000000
         const saluteThresholds = [100];
-        for (let i = 1; i <= 500; i++) {
+        for (let i = 1; i <= 1000000; i++) { // 1e9 / 1000 = 1M
             saluteThresholds.push(i * 1000);
         }
 
-        // Пороги для milestone-эффекта (500, 1500, 2500, ... до 500000)
+        // Пороги для milestone-эффекта (500, 1500, 2500, ... до 1000000000)
         const milestoneThresholds = [];
-        for (let k = 0; k <= 499; k++) {
+        for (let k = 0; k <= 999999; k++) { // До 1e9
             const thresh = 500 + (k * 1000);
-            if (thresh <= 500000) {
+            if (thresh <= 1000000000) {
                 milestoneThresholds.push(thresh);
             }
         }
         const unlockedMilestones = new Set(); // Чтобы не повторять
+
+        // Пороги для супер-эффекта на каждую тысячу: 1000, 2000, 3000, ..., до 1000000000
+        const superThresholds = [];
+        for (let i = 1; i <= 1000000; i++) {
+            superThresholds.push(i * 1000);
+        }
+        const unlockedSupers = new Set();
 
         function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000) {
             const particle = document.createElement('div');
@@ -356,6 +379,68 @@
             }, 300);
         }
 
+        // Новый супер-эффект на каждую тысячу: мигание, моргание, эмодзи-шторм + радужный флеш
+        function launchSuperEffect(threshold) {
+            if (unlockedSupers.has(threshold)) return;
+            unlockedSupers.add(threshold);
+
+            // 1. Массовый шторм эмодзи по всему экрану
+            const numParticles = 100; // Больше для вау!
+            const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
+            const superColors = ['#ff69b4', '#ffd700', '#00ff00', '#ff00ff', '#ffff00', '#ff1493', '#00bfff', '#ff4500'];
+            for (let i = 0; i < numParticles; i++) {
+                const emoji = superEmojis[Math.floor(Math.random() * superEmojis.length)];
+                const color = superColors[Math.floor(Math.random() * superColors.length)];
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                const delay = i * 20; // Быстрая волна
+                setTimeout(() => createParticle(x, y, emoji, color, document.body, 2000), delay); // Дольше летят
+            }
+
+            // 2. Мигание и моргание: анимация flash и blink
+            document.body.style.animation = 'blink 1s ease-in-out 3'; // Моргание 3 раза
+            const cats = document.querySelectorAll('.cat');
+            cats.forEach(cat => {
+                cat.style.animation = 'flash 0.5s ease-in-out infinite';
+                setTimeout(() => cat.style.animation = '', 1500); // Остановить через 1.5с
+            });
+
+            // 3. Радужный флеш фона с переходами
+            const originalBg = document.body.style.background;
+            const flashes = [
+                'linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%)',
+                'linear-gradient(135deg, #ffd700 0%, #ffff00 50%, #ff4500 100%)',
+                'linear-gradient(135deg, #00ff00 0%, #00bfff 50%, #0000ff 100%)',
+                'linear-gradient(135deg, #ff00ff 0%, #8a2be2 50%, #4b0082 100%)'
+            ];
+            let flashIndex = 0;
+            const flashInterval = setInterval(() => {
+                document.body.style.background = flashes[flashIndex % flashes.length];
+                flashIndex++;
+            }, 200);
+            setTimeout(() => {
+                clearInterval(flashInterval);
+                document.body.style.background = originalBg;
+                document.body.style.animation = '';
+            }, 2000);
+
+            // 4. Интенсивная вибрация
+            if (tg.HapticFeedback) {
+                for (let v = 0; v < 5; v++) {
+                    setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
+                }
+            }
+
+            // 5. Специальное уведомление для супер-эффекта
+            const achText = document.getElementById('ach-text');
+            achText.innerText = `СУПЕР! ${threshold} тапов! 🌈💥`;
+            const elem = document.getElementById('achievement');
+            elem.classList.add('show');
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, 4000); // Дольше показывать
+        }
+
         function showAchievement(threshold) {
             // Вибрация при ачивке
             if (tg.HapticFeedback) {
@@ -383,6 +468,10 @@
                 if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
                     unlockedMilestones.add(newScore);
                     launchMilestone();
+                }
+                // Проверяем на супер-эффект (каждую тысячу)
+                if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
+                    launchSuperEffect(newScore);
                 }
             }
         }
