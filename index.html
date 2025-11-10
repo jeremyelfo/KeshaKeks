@@ -281,7 +281,7 @@
 
             position: fixed;
 
-            bottom: 0;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + var(--footer-safe-height, 40px));
 
             left: 0;
 
@@ -302,6 +302,10 @@
             padding: 0;
 
             position: fixed;
+
+            /* Эффект наклона/перспектива */
+            transform-style: preserve-3d;
+            transition: transform 150ms ease;
         }
 
         /* Визуальная рамка для зоны тапа */
@@ -315,6 +319,21 @@
             background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.04), rgba(255,255,255,0) 60%);
             pointer-events: none;
         }
+
+        /* Блик при тапе и лёгкий наклон */
+        .tap-zone::after {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border-radius: 16px;
+            background: radial-gradient(circle at var(--tap-x, 50%) 50%, rgba(255,255,255,0.16), rgba(255,255,255,0) 36%);
+            opacity: 0;
+            transition: opacity 120ms ease;
+            pointer-events: none;
+        }
+        .tap-zone.glow::after { opacity: 1; }
+        .tap-zone.tap-tilt-left  { transform: perspective(800px) rotateY(6deg); }
+        .tap-zone.tap-tilt-right { transform: perspective(800px) rotateY(-6deg); }
 
 
 
@@ -393,9 +412,12 @@
             margin-bottom: 5px;
         }
         
-        /* Двухстрочная подпись без нежелательных переносов */
-        p.subtitle { margin-top: 8px; margin-bottom: 10px; }
-        p.subtitle span { display: block; }
+        /* Однострочная подпись с масштабированием под экран */
+        p.subtitle-one { 
+            margin-top: 8px; margin-bottom: 10px; 
+            white-space: nowrap; 
+            font-size: clamp(12px, 3.4vw, 16px);
+        }
 
         #score {
             color: #ffffff;
@@ -527,11 +549,12 @@
 
 
         /* Адаптивные размеры под разные экраны */
-        :root {
+:root {
             --cat-size: clamp(110px, 28vw, 180px);
             --tap-zone-height: clamp(35vh, 42vh, 50vh);
             --tap-zone-min-height: clamp(30vh, 38vh, 45vh);
             --ach-scale: clamp(0.72, calc(100vw / 420), 1); /* масштаб блока ачивок для узких экранов */
+            --footer-safe-height: 40px; /* зона под футер вне зоны тапа */
         }
 
     </style>
@@ -625,7 +648,7 @@
 
         <button class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
 
-        <p class="subtitle"><span>Котики мурлычут в унисон!</span><span>Продолжай гладить котиков! 😻</span></p>
+        <p class="subtitle-one">Котики мурлычут в унисон! Продолжай гладить котиков!</p>
 
     </div>
 
@@ -1701,7 +1724,6 @@
             e.preventDefault(); // Предотвращаем стандартное поведение
 
 
-
             let clientX;
 
             // Определяем координаты (для тача берем первый палец, для клика - mouseX)
@@ -1731,6 +1753,14 @@
             const tapX = clientX;
 
             const tapY = rect.top + rect.height / 2; // Центр кнопки по вертикали
+
+            // Эффекты зоны тапа: блик и лёгкий наклон в сторону тапа (короткий)
+            const pct = Math.max(0, Math.min(100, ((tapX - rect.left) / rect.width) * 100));
+            button.style.setProperty('--tap-x', pct + '%');
+            button.classList.add('glow');
+            const tiltClass = (tapX < center) ? 'tap-tilt-left' : 'tap-tilt-right';
+            button.classList.add(tiltClass);
+            setTimeout(() => { button.classList.remove('glow'); button.classList.remove(tiltClass); }, 180);
 
 
 
