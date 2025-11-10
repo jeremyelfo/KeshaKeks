@@ -1077,8 +1077,7 @@
 
         let score = 0;            // total_score (за всё время)
         let runScore = 0;          // счёт текущего захода (сессии)
-        let lastSaveTime = 0;      // время последнего сохранения
-        const SAVE_INTERVAL = 2000; // сохранять не чаще раза в 2 секунды
+        let saveTimeout = null;    // таймер для debounce
 
         let cat1Index = 0;
 
@@ -1580,24 +1579,19 @@
 
             checkAchievement(score);
 
-            // Обновляем счёт в Supabase с throttling (не чаще раза в 2 секунды)
-            const now = Date.now();
-            if (now - lastSaveTime >= SAVE_INTERVAL) {
-                lastSaveTime = now;
-                debugLog(`Save triggered: score=${score}, runScore=${runScore}`);
-                const user = tg.initDataUnsafe?.user;
-                if (user && supabaseClient) {
+            // Debounced save: сохраняем через 500ms после последнего клика
+            const user = tg.initDataUnsafe?.user;
+            if (user && supabaseClient) {
+                // Отменяем предыдущий таймер
+                if (saveTimeout) clearTimeout(saveTimeout);
+                
+                // Ставим новый таймер на 500ms
+                saveTimeout = setTimeout(() => {
+                    debugLog(`Debounced save: score=${score}, runScore=${runScore}`);
                     updateScores(user.id, user.username || 'anon', runScore, score).catch(err => {
                         debugLog(`Save error: ${err.message}`);
                     });
-                } else {
-                    if (!user) {
-                        debugLog('ERROR: Нет Telegram user');
-                    }
-                    if (!supabaseClient) {
-                        debugLog('ERROR: Нет Supabase client');
-                    }
-                }
+                }, 500);
             }
 
 
@@ -2081,8 +2075,12 @@
                 const user = tg.initDataUnsafe?.user;
                 if (user && supabaseClient && score > 0) {
                     debugLog(`[finalSave] score=${score}, runScore=${runScore}`);
-                    // Сбрасываем throttle чтобы сохранить немедленно
-                    lastSaveTime = 0;
+                    // Отменяем debounce таймер
+                    if (saveTimeout) {
+                        clearTimeout(saveTimeout);
+                        saveTimeout = null;
+                    }
+                    // Сохраняем немедленно
                     updateScores(user.id, user.username || 'anon', runScore, score);
                 }
             };
@@ -2103,13 +2101,6 @@
             
             // Сохранение при потере фокуса
             window.addEventListener('blur', finalSave);
-            
-            // Сохранение каждые 5 секунд автоматически
-            setInterval(() => {
-                if (score > 0 && !inputLocked) {
-                    finalSave();
-                }
-            }, 5000);
 
         };
 

@@ -36,6 +36,9 @@ async function verifyTelegramInitData(initData: string, botToken: string) {
   }
   const dataCheckString = pairs.join("\n")
 
+  console.log('[verifyTelegramInitData] hash from Telegram:', hash)
+  console.log('[verifyTelegramInitData] dataCheckString:', dataCheckString.substring(0, 200))
+
   // secretKey = HMAC_SHA256("WebAppData", botToken)
   const keyWebAppData = await importHmacKey(botToken)
   const secretKeyBytes = await hmacSHA256(keyWebAppData, "WebAppData")
@@ -49,6 +52,9 @@ async function verifyTelegramInitData(initData: string, botToken: string) {
 
   const signature = await hmacSHA256(secretKey as CryptoKey, dataCheckString)
   const calcHash = toHex(signature)
+
+  console.log('[verifyTelegramInitData] calculated hash:', calcHash)
+  console.log('[verifyTelegramInitData] match:', calcHash === hash)
 
   return calcHash === hash
 }
