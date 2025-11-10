@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кеша и Кекс снимают стресс!</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; background: #f0f8ff; }
+        #cat-image { width: 200px; height: 200px; cursor: pointer; margin: 20px; border-radius: 50%; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
+        #score { font-size: 24px; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Поглаживай котика! 🐱</h1>
+    <img id="cat-image" src="https://via.placeholder.com/200?text=🐱" alt="Котик" onclick="clickCat()">
+    <div id="score">Очки: 0</div>
+    <button onclick="showLeaderboard()">Показать топ</button>
+    <p>Твои котики мурлычут от радости!</p>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); // Полноэкранный режим
+
+        let score = 0;
+        function clickCat() {
+            score++;
+            document.getElementById('score').innerText = `Очки: ${score}`;
+            // Отправляем счёт в Telegram (для лидерборда)
+            tg.MainButton.setText(`Очки: ${score}`);
+            tg.MainButton.show();
+            tg.GameProxy.setGameScore({ score: score }, (data) => {
+                if (data) tg.showAlert('Счёт сохранён! Ты в топе?');
+            });
+        }
+
+        function showLeaderboard() {
+            tg.GameProxy.showLeaderboard();
+        }
+
+        // Инициализация
+        tg.MainButton.setText('Сохранить счёт').onClick(clickCat).show();
+    </script>
+</body>
+</html>
