@@ -505,6 +505,41 @@
 
         }
 
+        /* Debug floating button and log area */
+        .debug-fab {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 16px) + 80px);
+            right: 16px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: linear-gradient(135deg, #2a2a3e 0%, #1c1c30 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            z-index: 1200;
+            cursor: pointer;
+        }
+        .debug-fab:active { transform: scale(0.96); }
+        #debugLog {
+            max-height: 320px;
+            overflow-y: auto;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            color: #e0e0e0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
     </style>
 
 </head>
@@ -613,6 +648,23 @@
 
     <script>
 
+        // In-app debug log capture for mobile (overrides console to mirror logs into UI)
+        const __dbg = { logs: [], push(level, args) {
+                const ts = new Date().toISOString().split('T')[1]?.replace('Z','') || '';
+                let msg;
+                try { msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '); }
+                catch(_) { msg = args.map(String).join(' '); }
+                this.logs.push(`[${ts}] ${level.toUpperCase()}: ${msg}`);
+                if (this.logs.length > 500) this.logs.shift();
+            } };
+        (function(){
+            const orig = { log: console.log, warn: console.warn, error: console.error };
+            console.log = function(...args){ try{__dbg.push('log', args);}catch(_){}; return orig.log.apply(console, args); };
+            console.warn = function(...args){ try{__dbg.push('warn', args);}catch(_){}; return orig.warn.apply(console, args); };
+            console.error = function(...args){ try{__dbg.push('error', args);}catch(_){}; return orig.error.apply(console, args); };
+            window.__DBG_EXPORT = { logs: __dbg.logs };
+        })();
+
         const tg = window.Telegram.WebApp;
 
         tg.ready();
@@ -675,15 +727,14 @@
                     .from('leaderboard')
                     .select('max_score')
                     .eq('telegram_id', userId)
-                    .single();
+                    .maybeSingle();
 
-                if (error && error.code !== 'PGRST116') {
-                    // PGRST116 - это "не найдено", это нормально для нового пользователя
-                    console.error('[updateScore] Ошибка при запросе max_score:', error);
-                    // Продолжаем выполнение, чтобы создать новую запись
+                if (error) {
+                    console.warn('[updateScore] Ошибка при запросе max_score (maybeSingle):', error);
+                    // Продолжаем выполнение: если записи нет или ошибка некритична, попытаемся создать/обновить запись при улучшении
                 }
 
-                const currentMax = data ? data.max_score : 0;
+                const currentMax = (data && typeof data.max_score === 'number') ? data.max_score : 0;
                 console.log('[updateScore] Текущий максимум:', currentMax, 'Новый счёт:', newScore);
 
                 // Обновляем только если новый счёт больше текущего максимума
@@ -1656,6 +1707,20 @@
 
 
 
+        function openDebugModal() {
+            try {
+                const m = document.getElementById('debugModal');
+                const c = document.getElementById('debugLog');
+                if (!m || !c) return;
+                c.textContent = (__dbg.logs || []).slice(-200).join('\n');
+                m.classList.add('show');
+                m.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } catch (e) {
+                // no-op
+            }
+        }
+
         // Инициализация
 
         window.onload = function() {
@@ -1718,6 +1783,10 @@
                 console.warn('Элемент tapZone не найден');
             }
 
+            // Debug: open debug modal
+            const debugBtn = document.getElementById('debugBtn');
+            if (debugBtn) { debugBtn.addEventListener('click', openDebugModal); }
+
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
             if (leaderboardModal) {
@@ -1735,6 +1804,16 @@
     </script>
 
     <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
+
+    <div id="debugModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-content">
+            <h2>Debug</h2>
+            <div id="debugLog"></div>
+            <button class="primary-btn primary-btn--full" onclick="(function(){const m=document.getElementById('debugModal');m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.classList.remove('has-modal');})();">Закрыть</button>
+        </div>
+    </div>
+
+    <button id="debugBtn" class="debug-fab" title="Debug">🐞</button>
 
 </body>
 
