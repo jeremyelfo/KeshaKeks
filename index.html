@@ -11,6 +11,7 @@
     <title>Кеша и Кекс снимают стресс!</title>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -65,6 +66,35 @@
             margin: 0 0 20px;
             font-size: 16px;
             line-height: 1.4;
+        }
+
+        .modal-content h2 {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        #leaderboardList {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #leaderboardList li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            font-size: 15px;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        #leaderboardList li:last-child {
+            border-bottom: none;
         }
 
 
@@ -521,6 +551,22 @@
 
 
 
+    <div id="leaderboardModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+
+        <div class="modal-content">
+
+            <h2>🏆 Топ игроков</h2>
+
+            <ul id="leaderboardList"></ul>
+
+            <button class="primary-btn primary-btn--full" onclick="document.getElementById('leaderboardModal').classList.remove('show'); document.body.classList.remove('has-modal');">Закрыть</button>
+
+        </div>
+
+    </div>
+
+
+
     <div class="content-wrapper">
 
         <h1>Кеша и Кекс снимают стресс!❤️</h1>
@@ -573,7 +619,74 @@
 
         tg.expand();
 
+        // Инициализация Supabase
+        const supabaseUrl = 'https://yourproject.supabase.co'; // замените на ваш URL
+        const supabaseKey = 'your-anon-key'; // замените на ваш anon key
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Функции работы с Supabase
+        async function updateScore(telegramId, username, newScore) {
+            const { data, error } = await supabase
+                .from('leaderboard')
+                .select('max_score')
+                .eq('telegram_id', telegramId)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Ошибка при запросе max_score:', error);
+                return;
+            }
+
+            const currentMax = data ? data.max_score : 0;
+
+            if (newScore > currentMax) {
+                const { error: upsertError } = await supabase
+                    .from('leaderboard')
+                    .upsert({ telegram_id: telegramId, username: username, max_score: newScore, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' });
+
+                if (upsertError) {
+                    console.error('Ошибка при обновлении счета:', upsertError);
+                }
+            }
+        }
+
+        async function getLeaderboardTop() {
+            const { data, error } = await supabase
+                .from('leaderboard')
+                .select('username, max_score')
+                .order('max_score', { ascending: false })
+                .limit(10);
+
+            if (error) {
+                console.error('Ошибка при получении топа:', error);
+                return [];
+            }
+            return data;
+        }
+
+        async function showLeaderboard() {
+            const leaderboardData = await getLeaderboardTop();
+            const leaderboardModal = document.getElementById('leaderboardModal');
+            const leaderboardList = document.getElementById('leaderboardList');
+            leaderboardList.innerHTML = '';
+
+            if (leaderboardData.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'Пока нет рекордов';
+                li.style.color = '#b0b0b0';
+                leaderboardList.appendChild(li);
+            } else {
+                leaderboardData.forEach(({ username, max_score }, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${index + 1}. ${username || 'Аноним'} - ${max_score} очков`;
+                    leaderboardList.appendChild(li);
+                });
+            }
+
+            leaderboardModal.classList.add('show');
+            leaderboardModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('has-modal');
+        }
 
         let score = 0;
 
@@ -1142,13 +1255,19 @@
 
 
 
-        function clickCat(catNumber, x, y) {
+        async function clickCat(catNumber, x, y) {
 
             score++;
 
             document.getElementById('score').innerText = `Очки уюта: ${score}`;
 
             checkAchievement(score);
+
+            // Обновляем счёт в Supabase
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                await updateScore(user.id, user.username || 'anon', score);
+            }
 
 
 
@@ -1216,11 +1335,6 @@
 
 
 
-        function showLeaderboard() {
-
-            tg.GameProxy.showLeaderboard();
-
-        }
 
 
 
@@ -1375,6 +1489,16 @@
             tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
 
             tapZone.addEventListener('click', handleTapZone);
+
+            // 3. Обработчик закрытия модального окна лидерборда при клике на фон
+            const leaderboardModal = document.getElementById('leaderboardModal');
+            leaderboardModal.addEventListener('click', (e) => {
+                if (e.target.id === 'leaderboardModal') {
+                    leaderboardModal.classList.remove('show');
+                    leaderboardModal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('has-modal');
+                }
+            });
 
         };
 
