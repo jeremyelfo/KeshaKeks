@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -237,19 +239,6 @@
         .close-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
-        /* Лидерборд модал: простой список с твоим счётом */
-        #leaderboardModal .modal-content {
-            max-height: 60vh;
-            overflow-y: auto;
-            padding: 20px;
-        }
-        #leaderboardModal .score-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 10px;
-            margin: 5px 0;
-            text-align: left;
-        }
         /* Анимация мигания для супер-эффекта */
         @keyframes flash {
             0%, 50%, 100% { opacity: 1; }
@@ -259,38 +248,14 @@
             0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
             50% { background: linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #c71585 100%); }
         }
-        /* Темы для Telegram */
-        body.light {
-            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
-            color: #333;
-        }
-        body.light .modal-content {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 50%, rgba(220,220,220,0.95) 100%);
-            color: #333;
-        }
-        body.light button, body.light .close-btn {
-            background: rgba(0, 0, 0, 0.1);
-            color: #333;
-            border-color: rgba(0,0,0,0.2);
-        }
     </style>
 </head>
-<body class="dark"> <!-- По умолчанию тёмная, меняем на основе tg.colorScheme -->
+<body>
     <!-- Модальное окно приветствия -->
     <div id="welcomeModal" class="modal">
         <div class="modal-content">
             <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
             <button class="close-btn" onclick="closeModal()">Начать терапию!</button>
-        </div>
-    </div>
-
-    <!-- Модал для лидерборда -->
-    <div id="leaderboardModal" class="modal">
-        <div class="modal-content">
-            <h2>🏆 Твой лидерборд</h2>
-            <p id="personalScore">Загружаем...</p>
-            <button class="close-btn" onclick="closeLeaderboardModal()">Закрыть</button>
-            <p style="font-size: 12px; color: #b0b0b0;">Для глобального топа настрой бота на приём sendData!</p>
         </div>
     </div>
 
@@ -316,7 +281,7 @@
     </div>
 
     <!-- Фоновый звук мурлыканья -->
-    <audio id="backgroundMusic" loop>
+    <audio id="backgroundMusic" loop autoplay>
         <source src="mur.mp3" type="audio/mpeg">
         Ваш браузер не поддерживает аудио.
     </audio>
@@ -326,17 +291,7 @@
         tg.ready();
         tg.expand(); // Полноэкранный режим
 
-        // Адаптация под тему Telegram
-        const theme = tg.colorScheme;
-        document.body.classList.remove('dark', 'light');
-        document.body.classList.add(theme);
-
-        // Получаем user ID для уникальности
-        const user = tg.initDataUnsafe.user;
-        const userId = user ? user.id : 'guest';
-
         let score = 0;
-        let highscore = 0; // Локальный highscore, загружаем из CloudStorage
         let cat1Index = 0; // Индекс фото для Кеши (шоколадного)
         let cat2Index = 0; // Для Кекса (серебристого)
 
@@ -401,83 +356,6 @@
             specialThresholds.push(thresh);
         }
         const unlockedSpecials = new Set();
-
-        // Ключ для CloudStorage (уникальный для пользователя)
-        const highscoreKey = `highscore_${userId}`;
-
-        // Загрузка highscore при инициализации
-        function loadHighscore() {
-            if (!tg.CloudStorage) {
-                console.log('CloudStorage недоступен вне Telegram');
-                highscore = 0;
-                return;
-            }
-            tg.CloudStorage.getItem(highscoreKey, function(error, value) {
-                if (error) {
-                    console.error('Ошибка загрузки highscore:', error);
-                    highscore = 0;
-                } else {
-                    highscore = value ? parseInt(value, 10) : 0;
-                    console.log('Загружен highscore:', highscore);
-                    // Обновляем UI, если нужно (например, в score)
-                    document.getElementById('score').innerText = `Очки уюта: ${score} (Рекорд: ${highscore})`;
-                }
-            });
-        }
-
-        // Сохранение highscore (только если новый > старый)
-        function saveHighscore(newScore) {
-            if (!tg.CloudStorage) {
-                console.log('CloudStorage недоступен');
-                return;
-            }
-            if (newScore <= highscore) return; // Не сохраняем хуже
-
-            const value = newScore.toString();
-            tg.CloudStorage.setItem(highscoreKey, value, function(error, success) {
-                if (error) {
-                    console.error('Ошибка сохранения highscore:', error);
-                    tg.showAlert('Ошибка сохранения рекорда: ' + error);
-                } else if (success) {
-                    console.log('Highscore сохранён:', newScore);
-                    highscore = newScore;
-                    // Отправляем боту для глобального лидерборда (если бот настроен)
-                    sendToBotForGlobal(newScore);
-                    // Обновляем UI
-                    document.getElementById('score').innerText = `Очки уюта: ${score} (Рекорд: ${highscore})`;
-                }
-            });
-        }
-
-        // Отправка счёта боту для глобального лидерборда
-        function sendToBotForGlobal(score) {
-            const dataToSend = JSON.stringify({
-                action: 'update_highscore',
-                user_id: userId,
-                username: user ? user.username : 'anonymous',
-                score: score
-            });
-            try {
-                tg.sendData(dataToSend); // Закроет app, бот получит и обновит глобальный топ via setGameScore
-                console.log('Счёт отправлен боту для глобального топа');
-            } catch (e) {
-                console.error('Ошибка sendData:', e);
-                // Не показываем alert, чтобы не прерывать игру
-            }
-        }
-
-        // Показ лидерборда: личный highscore в модале (глобальный через бота)
-        function showLeaderboard() {
-            const modal = document.getElementById('leaderboardModal');
-            document.getElementById('personalScore').innerText = `Твой рекорд: ${highscore} очков уюта! 😻\n(Играй дальше, чтобы побить!)\n\nДля глобального топа: отправь новый рекорд кнопкой "Играть" в боте.`;
-            modal.classList.add('show');
-            // Опционально: запросить глобальный топ у бота
-            // sendToBotForGlobal('show_leaderboard'); // Но sendData закроет app, так что только при новом рекорде
-        }
-
-        function closeLeaderboardModal() {
-            document.getElementById('leaderboardModal').classList.remove('show');
-        }
 
         function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000) {
             const particle = document.createElement('div');
@@ -673,11 +551,8 @@
 
         function clickCat(catNumber) {
             score++;
-            document.getElementById('score').innerText = `Очки уюта: ${score} (Рекорд: ${highscore})`;
+            document.getElementById('score').innerText = `Очки уюта: ${score}`;
             checkAchievement(score); // Проверяем ачивку
-
-            // Сохраняем highscore, если новый рекорд
-            saveHighscore(score);
 
             // Получаем позицию клика (центр кота)
             const cat = document.getElementById('cat' + catNumber);
@@ -697,6 +572,17 @@
                 cat2Index = (cat2Index + 1) % cat2Photos.length;
                 document.getElementById('cat2').src = cat2Photos[cat2Index];
             }
+
+            // Автосейв счёта после каждого тапа (уже работает!)
+            tg.GameProxy.setGameScore({ score: score }, (data) => {
+                if (data) {
+                    // Можно добавить вибрацию: tg.HapticFeedback.impactOccurred('light');
+                }
+            });
+        }
+
+        function showLeaderboard() {
+            tg.GameProxy.showLeaderboard();
         }
 
         // Модалка при загрузке
@@ -707,14 +593,12 @@
 
         // Инициализация
         window.onload = function() {
-            loadHighscore(); // Загружаем highscore сразу
-
             const modal = document.getElementById('welcomeModal');
             modal.classList.add('show');
-            // Запуск фонового звука (в Telegram автозапуск может блокироваться, так что user interaction)
+            // Запуск фонового звука
             const audio = document.getElementById('backgroundMusic');
             audio.volume = 0.3; // Тихо, чтобы не мешало
-            // Не autoplay, ждём клика (в clickCat можно play)
+            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
 
             // Добавляем обработчики touchstart для поддержки мультитача (одновременные тапы на двух котах)
             const cat1 = document.getElementById('cat1');
@@ -722,27 +606,18 @@
             cat1.addEventListener('touchstart', (e) => {
                 e.preventDefault(); // Предотвращаем стандартное поведение для немедленного отклика
                 clickCat(1);
-                // Play audio on first touch
-                if (audio.paused) audio.play().catch(e => console.log('Звук заблокирован'));
             }, { passive: false });
             cat2.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 clickCat(2);
-                if (audio.paused) audio.play().catch(e => console.log('Звук заблокирован'));
             }, { passive: false });
             // Оставляем onclick для десктопа/мыши
-            cat1.addEventListener('click', () => clickCat(1));
-            cat2.addEventListener('click', () => clickCat(2));
-
-            // MainButton: показываем текущий счёт, клик сохраняет (опционально)
-            tg.MainButton.setText(`Рекорд: ${highscore}`);
-            tg.MainButton.onClick(() => {
-                saveHighscore(score);
-                tg.showAlert(`Рекорд сохранён: ${highscore}!`);
-            });
-            tg.MainButton.show();
         };
+
+        // MainButton отключена — автосейв в clickCat, кнопка не показывается
+        tg.MainButton.setText('Очки уюта: 0'); // Опционально: текст для скрытой кнопки, если нужно
+        // .onClick и .show() убраны!
     </script>
-    <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.4) powerd by Jeremy Elfo (c) 2025</div>
+    <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 </body>
 </html>
