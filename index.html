@@ -506,40 +506,6 @@
 
         }
 
-        /* Debug floating button and log area */
-        .debug-fab {
-            position: fixed;
-            bottom: calc(env(safe-area-inset-bottom, 16px) + 80px);
-            right: 16px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: linear-gradient(135deg, #2a2a3e 0%, #1c1c30 100%);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            z-index: 1200;
-            cursor: pointer;
-        }
-        .debug-fab:active { transform: scale(0.96); }
-        #debugLog {
-            max-height: 320px;
-            overflow-y: auto;
-            text-align: left;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 10px;
-            border-radius: 8px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            font-size: 12px;
-            color: #e0e0e0;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
 
     </style>
 
@@ -609,16 +575,6 @@
 
 
 
-    <div id="nameModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
-        <div class="modal-content">
-            <h2>Имя в лидерборде</h2>
-            <input id="nameInput" type="text" maxlength="24" placeholder="Введите имя" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;outline:none;">
-            <div style="height:8px"></div>
-            <button class="primary-btn primary-btn--full" onclick="saveName()">Сохранить</button>
-            <div style="height:8px"></div>
-            <button class="primary-btn primary-btn--full" onclick="(function(m){m=document.getElementById('nameModal');m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.classList.remove('has-modal');})()">Отмена</button>
-        </div>
-    </div>
 
     <div class="content-wrapper">
 
@@ -665,23 +621,6 @@
 
 
     <script>
-
-        // In-app debug log capture for mobile (overrides console to mirror logs into UI)
-        const __dbg = { logs: [], push(level, args) {
-                const ts = new Date().toISOString().split('T')[1]?.replace('Z','') || '';
-                let msg;
-                try { msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '); }
-                catch(_) { msg = args.map(String).join(' '); }
-                this.logs.push(`[${ts}] ${level.toUpperCase()}: ${msg}`);
-                if (this.logs.length > 500) this.logs.shift();
-            } };
-        (function(){
-            const orig = { log: console.log, warn: console.warn, error: console.error };
-            console.log = function(...args){ try{__dbg.push('log', args);}catch(_){}; return orig.log.apply(console, args); };
-            console.warn = function(...args){ try{__dbg.push('warn', args);}catch(_){}; return orig.warn.apply(console, args); };
-            console.error = function(...args){ try{__dbg.push('error', args);}catch(_){}; return orig.error.apply(console, args); };
-            window.__DBG_EXPORT = { logs: __dbg.logs };
-        })();
 
         const tg = window.Telegram.WebApp;
 
@@ -1089,60 +1028,11 @@
 
 
 
-        const achievementThresholds = [1, 50];
-
-        for (let i = 1; i <= 10000000; i++) {
-
-            achievementThresholds.push(i * 100);
-
-            achievementThresholds.push(i * 100 + 50);
-
-        }
-
-        
-
-        // Мамми/Паппи (УДАЛЕНО)
-
-        const specialThresholds = []; 
-
-
-
-        const everyHundredThresholds = [];
-
-        for (let i = 1; i <= 10000000; i++) {
-
-            everyHundredThresholds.push(i * 100);
-
-        }
-
-
-
-        const milestoneThresholds = [];
-
-        for (let k = 0; k <= 999999; k++) {
-
-            const thresh = 500 + (k * 1000);
-
-            if (thresh <= 1000000000) {
-
-                milestoneThresholds.push(thresh);
-
-            }
-
-        }
-
-
-
-        const superThresholds = [];
-
-        for (let i = 1; i <= 1000000; i++) {
-
-            superThresholds.push(i * 1000);
-
-        }
-
-
-
+        // Fast math checks instead of huge precomputed arrays
+        function isSuper(n) { return n > 0 && n % 1000 === 0; }
+        function isMilestone(n) { return n >= 500 && (n - 500) % 1000 === 0; }
+        function isEveryHundred(n) { return n > 0 && n % 100 === 0; }
+        function isAchievement(n) { return n === 1 || n === 50 || (n % 100 === 0) || (n % 100 === 50); }
         const unlockedAchievements = new Set();
 
         const unlockedMilestones = new Set();
@@ -1496,58 +1386,27 @@
 
         function checkAchievement(newScore) {
 
-            // 1. Проверка на СУПЕР (каждая 1000)
-
-            if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
-
+            // 1. SUPER (каждая 1000)
+            if (isSuper(newScore) && !unlockedSupers.has(newScore)) {
                 launchSuperEffect(newScore);
-
             }
-
-            // 2. Проверка на MILESTONE (500, 1500, 2500...)
-
-            else if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
-
+            // 2. MILESTONE (500, 1500, 2500...)
+            else if (isMilestone(newScore) && !unlockedMilestones.has(newScore)) {
                 unlockedMilestones.add(newScore);
-
                 launchMilestone();
-
+            }
+            // 3. SALUTE (каждая сотня, исключая выше)
+            else if (isEveryHundred(newScore) && !isMilestone(newScore) && !isSuper(newScore)) {
+                launchSalute();
             }
 
-            // 3. Проверка на SALUTE (Каждая сотня, исключая MILESTONE и SUPER)
-
-            else if (everyHundredThresholds.includes(newScore)) {
-
-                const isMilestone = milestoneThresholds.includes(newScore);
-
-                const isSuper = superThresholds.includes(newScore);
-
-
-
-                if (!isMilestone && !isSuper) {
-
-                    launchSalute();
-
-                }
-
-            }
-
-
-
-            // 4. Проверка на обычную Ачивку (для уведомления)
-
-            if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
-
+            // 4. Обычная ачивка (1, 50, каждая 100 и 100+50)
+            if (isAchievement(newScore) && !unlockedAchievements.has(newScore)) {
                 unlockedAchievements.add(newScore);
-
                 showAchievement(newScore);
-
             }
 
-
-
-            // 5. Проверка специальные ачивки (УДАЛЕНО)
-
+            // 5. специальные ачивки — удалено
         }
 
 
@@ -1894,19 +1753,6 @@
 
 
 
-        function openDebugModal() {
-            try {
-                const m = document.getElementById('debugModal');
-                const c = document.getElementById('debugLog');
-                if (!m || !c) return;
-                c.textContent = (__dbg.logs || []).slice(-200).join('\n');
-                m.classList.add('show');
-                m.setAttribute('aria-hidden', 'false');
-                document.body.classList.add('has-modal');
-            } catch (e) {
-                // no-op
-            }
-        }
 
         // Инициализация
 
@@ -1970,18 +1816,6 @@
                 console.warn('Элемент tapZone не найден');
             }
 
-            // Debug: скрытая активация — 5 кликов по футеру за 1.5с
-            const footer = document.getElementById('footer');
-            if (footer) {
-                let taps = [];
-                footer.addEventListener('click', () => {
-                    const now = Date.now();
-                    taps = taps.filter(t => now - t < 1500);
-                    taps.push(now);
-                    if (taps.length >= 5) { openDebugModal(); taps = []; }
-                });
-            }
-
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
             if (leaderboardModal) {
@@ -2000,13 +1834,6 @@
 
     <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 
-    <div id="debugModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
-        <div class="modal-content">
-            <h2>Debug</h2>
-            <div id="debugLog"></div>
-            <button class="primary-btn primary-btn--full" onclick="(function(){const m=document.getElementById('debugModal');m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.classList.remove('has-modal');})();">Закрыть</button>
-        </div>
-    </div>
 
 
 </body>
