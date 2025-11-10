@@ -262,8 +262,8 @@
         .content-wrapper {
             /* Опускаем контент ниже заголовка и нового блока ачивок (2 ряда) */
             padding-top: calc(env(safe-area-inset-top, 20px) + 200px);
-            /* Отступ снизу = высота зоны тапа + футер + одинаковый зазор */
-            padding-bottom: calc(var(--tap-zone-height) + var(--footer-safe-height) + var(--tap-margin) + env(safe-area-inset-bottom, 0px));
+            /* Минимальный безопасный отступ снизу — равный зазор + футер */
+            padding-bottom: calc(var(--tap-margin) + var(--footer-safe-height) + env(safe-area-inset-bottom, 0px));
             max-width: 90%;
             margin: 0 auto;
         }
@@ -281,10 +281,10 @@
             left: var(--tap-margin);
             right: var(--tap-margin);
 
-            height: var(--tap-zone-height, 40vh); /* Адаптивная высота */
+            height: var(--tap-zone-height, 40vh); /* Адаптивная высота (JS может переопределить) */
 
-            /* равный отступ снизу от футера */
-            bottom: calc(env(safe-area-inset-bottom, 0px) + var(--footer-safe-height, 40px) + var(--tap-margin));
+            /* top и height будут вычисляться скриптом, чтобы выдержать одинаковые отступы сверху/снизу */
+            /* bottom убран, чтобы не конфликтовать с расчётом top/height */
 
             /* Растягиваем на всю доступную область */
             min-height: var(--tap-zone-min-height, calc(50vh - 100px)); 
@@ -723,6 +723,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             try { decideWelcomeModal(); } catch (_) {}
+            try { layoutTapZone(); } catch (_) {}
         });
 
         // Инициализация Supabase
@@ -1663,6 +1664,7 @@
             document.body.classList.remove('has-modal');
 
             inputLocked = false;
+            try { layoutTapZone(); } catch (_) {}
 
         }
 
@@ -1690,6 +1692,7 @@
             m.classList.add('show');
             m.setAttribute('aria-hidden','false');
             document.body.classList.add('has-modal');
+            try { layoutTapZone(); } catch (_) {}
             const i = document.getElementById('firstNameInput');
             if (i) i.focus();
         }
@@ -1731,7 +1734,35 @@
                 const m = document.getElementById('welcomeModalFirst');
                 if (m) { m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.classList.remove('has-modal'); }
                 inputLocked = false;
+                try { layoutTapZone(); } catch (_) {}
             }catch(e){ setFirstNameError('Ошибка, попробуйте ещё раз'); console.warn('[saveFirstTimeName]', e); }
+        }
+        function getCssVarPx(name, fallback) {
+            try {
+                const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+                if (!v) return fallback;
+                if (v.endsWith('px')) return parseFloat(v);
+                const n = parseFloat(v); return isNaN(n) ? fallback : n;
+            } catch (_) { return fallback; }
+        }
+        function layoutTapZone() {
+            const tz = document.getElementById('tapZone');
+            const cw = document.querySelector('.content-wrapper');
+            const footer = document.getElementById('footer');
+            if (!tz || !cw || !footer) return;
+            const margin = getCssVarPx('--tap-margin', 12);
+            const minH = Math.max(180, Math.round(window.innerHeight * 0.25));
+            const cbr = cw.getBoundingClientRect();
+            const fbr = footer.getBoundingClientRect();
+            const top = Math.round(cbr.bottom + margin);
+            const maxBottom = Math.round(fbr.top - margin);
+            let height = Math.max(minH, maxBottom - top);
+            if (top + height > maxBottom) height = Math.max(minH, maxBottom - top);
+            // Применяем рассчитанные размеры/позицию
+            tz.style.top = top + 'px';
+            tz.style.height = height + 'px';
+            tz.style.left = margin + 'px';
+            tz.style.right = margin + 'px';
         }
         async function decideWelcomeModal(){
             try{
@@ -1885,6 +1916,11 @@
             } else {
                 console.warn('Элемент tapZone не найден');
             }
+
+            // Ресайз/ориентация — поддерживаем одинаковые отступы
+            window.addEventListener('resize', () => { try { layoutTapZone(); } catch (_) {} });
+            window.addEventListener('orientationchange', () => { try { layoutTapZone(); } catch (_) {} });
+            setTimeout(() => { try { layoutTapZone(); } catch (_) {} }, 0);
 
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
