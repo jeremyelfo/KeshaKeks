@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -228,7 +230,7 @@
             <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)" onclick="clickCat(1)">
             <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
         </div>
-        <div id="score">Очки: 0</div>
+        <div id="score">Очки уюта: 0</div>
         <button onclick="showLeaderboard()">🏆 Показать топ</button>
         <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
     </div>
@@ -305,6 +307,15 @@
             superThresholds.push(i * 1000);
         }
         const unlockedSupers = new Set();
+
+        // Новые специальные пороги: 333, 444, 555, 666, 777, ... (каждые +111) до 1000000000
+        const specialThresholds = [];
+        for (let i = 0; ; i++) {
+            const thresh = 333 + i * 111;
+            if (thresh > 1000000000) break;
+            specialThresholds.push(thresh);
+        }
+        const unlockedSpecials = new Set();
 
         function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000) {
             const particle = document.createElement('div');
@@ -456,6 +467,23 @@
             }, 3000); // Скрыть через 3 сек
         }
 
+        // Новая функция для специальных ачивок
+        function showSpecialAchievement(threshold) {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+            }
+            const index = specialThresholds.indexOf(threshold);
+            const isEven = index % 2 === 0;
+            let text = isEven ? `Мамми, это что "${threshold}" тапов?😽` : `Паппи, ты это виделб?! 😻`;
+            const achText = document.getElementById('ach-text');
+            achText.innerText = text;
+            const elem = document.getElementById('achievement');
+            elem.classList.add('show');
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, 3000);
+        }
+
         function checkAchievement(newScore) {
             if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
                 unlockedAchievements.add(newScore);
@@ -474,11 +502,16 @@
                     launchSuperEffect(newScore);
                 }
             }
+            // Проверяем специальные ачивки (независимо от основных)
+            if (specialThresholds.includes(newScore) && !unlockedSpecials.has(newScore)) {
+                unlockedSpecials.add(newScore);
+                showSpecialAchievement(newScore);
+            }
         }
 
         function clickCat(catNumber) {
             score++;
-            document.getElementById('score').innerText = `Очки: ${score}`;
+            document.getElementById('score').innerText = `Очки уюта: ${score}`;
             checkAchievement(score); // Проверяем ачивку
 
             // Получаем позицию клика (центр кота)
@@ -501,7 +534,7 @@
             }
 
             // Отправляем общий счёт в Telegram
-            tg.MainButton.setText(`Очки: ${score}`);
+            tg.MainButton.setText(`Очки уюта: ${score}`);
             tg.MainButton.show();
             tg.GameProxy.setGameScore({ score: score }, (data) => {
                 if (data) {
@@ -536,4 +569,6 @@
             tg.GameProxy.setGameScore({ score: score });
         }).show();
     </script>
+    <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 </body>
+</html>
