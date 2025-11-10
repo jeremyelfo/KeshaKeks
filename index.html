@@ -1048,6 +1048,8 @@
 
         let score = 0;            // total_score (за всё время)
         let runScore = 0;          // счёт текущего захода (сессии)
+        let lastSaveTime = 0;      // время последнего сохранения
+        const SAVE_INTERVAL = 2000; // сохранять не чаще раза в 2 секунды
 
         let cat1Index = 0;
 
@@ -1549,18 +1551,22 @@
 
             checkAchievement(score);
 
-            // Обновляем счёт в Supabase асинхронно (неблокирующий вызов)
-            const user = tg.initDataUnsafe?.user;
-            if (user && supabaseClient) {
-                updateScores(user.id, user.username || 'anon', runScore, score).catch(err => {
-                    console.error('[clickCat] Ошибка при сохранении счета:', err);
-                });
-            } else {
-                if (!user) {
-                    console.warn('[clickCat] Пользователь Telegram не найден');
-                }
-                if (!supabaseClient) {
-                    console.warn('[clickCat] Supabase клиент не инициализирован');
+            // Обновляем счёт в Supabase с throttling (не чаще раза в 2 секунды)
+            const now = Date.now();
+            if (now - lastSaveTime >= SAVE_INTERVAL) {
+                lastSaveTime = now;
+                const user = tg.initDataUnsafe?.user;
+                if (user && supabaseClient) {
+                    updateScores(user.id, user.username || 'anon', runScore, score).catch(err => {
+                        console.error('[clickCat] Ошибка при сохранении счета:', err);
+                    });
+                } else {
+                    if (!user) {
+                        console.warn('[clickCat] Пользователь Telegram не найден');
+                    }
+                    if (!supabaseClient) {
+                        console.warn('[clickCat] Supabase клиент не инициализирован');
+                    }
                 }
             }
 
@@ -1835,33 +1841,48 @@
 
         // Обновление счётов на сервере через Edge Function
         async function updateScores(telegramId, username, runVal, totalVal) {
-            if (!supabaseClient) { console.warn('[updateScores] Supabase не инициализирован'); return; }
+            console.log('[updateScores] Вызов функции:', { telegramId, username, runVal, totalVal });
+            
+            if (!supabaseClient) { 
+                console.warn('[updateScores] Supabase не инициализирован'); 
+                return; 
+            }
+            
             const storedName = (getStoredDisplayName() || '').trim();
+            console.log('[updateScores] storedName:', storedName);
+            
             try {
                 // Получаем initData от Telegram
                 const initData = tg.initData || '';
+                console.log('[updateScores] initData length:', initData.length);
+                
                 if (!initData) {
                     console.warn('[updateScores] Нет Telegram initData');
                     return;
                 }
 
+                const payload = {
+                    initData,
+                    runScore: runVal,
+                    totalScore: totalVal,
+                    displayName: storedName
+                };
+                console.log('[updateScores] Отправка в Edge Function:', payload);
+
                 // Вызываем Edge Function
                 const { data, error } = await supabaseClient.functions.invoke('update_scores', {
-                    body: {
-                        initData,
-                        runScore: runVal,
-                        totalScore: totalVal,
-                        displayName: storedName
-                    }
+                    body: payload
                 });
 
                 if (error) {
                     console.error('[updateScores] Edge Function error:', error);
+                    console.error('[updateScores] Error details:', JSON.stringify(error));
                 } else {
                     console.log('[updateScores] Edge Function success:', data);
                 }
             } catch (e) {
-                console.error('[updateScores] catch', e);
+                console.error('[updateScores] catch:', e);
+                console.error('[updateScores] catch stack:', e.stack);
             }
         }
         async function decideWelcomeModal(){
@@ -2013,8 +2034,6 @@
                 console.warn('Элемент tapZone не найден');
             }
 
-            // Ресайз/ориентация — поддерживаем одинаковые отступы
-
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
             if (leaderboardModal) {
@@ -2026,6 +2045,28 @@
                     }
                 });
             }
+
+            // 4. Финальное сохранение при закрытии приложения
+            const finalSave = () => {
+                const user = tg.initDataUnsafe?.user;
+                if (user && supabaseClient && runScore > 0) {
+                    console.log('[finalSave] Сохранение перед закрытием');
+                    updateScores(user.id, user.username || 'anon', runScore, score);
+                }
+            };
+
+            // Сохранение при скрытии страницы
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    finalSave();
+                }
+            });
+
+            // Сохранение перед выгрузкой
+            window.addEventListener('beforeunload', finalSave);
+            
+            // Сохранение при потере фокуса
+            window.addEventListener('blur', finalSave);
 
         };
 
