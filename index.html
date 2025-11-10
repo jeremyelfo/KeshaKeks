@@ -19,15 +19,17 @@
             overflow: hidden; /* Чтобы сердечки не выходили за экран */
             touch-action: manipulation; /* Предотвращаем зум и скролл при тапах */
         }
-        /* Учёт Telegram хедера: отступ сверху для кнопок в углах */
+        /* Учёт Telegram хедера: увеличенный отступ сверху для кнопок в углах */
         .content-wrapper {
-            padding-top: env(safe-area-inset-top, 60px); /* Адаптивно под хедер Telegram */
+            padding-top: env(safe-area-inset-top, 100px); /* Увеличено для избежания перекрытия хедера Telegram */
             padding-bottom: env(safe-area-inset-bottom, 20px);
+            max-width: 90%; /* Ограничиваем ширину для центрирования */
+            margin: 0 auto; /* Центрируем контент */
         }
         .cat-container { 
             display: flex; 
             justify-content: space-around; 
-            margin: 20px 0; 
+            margin: 30px 0; /* Увеличен отступ сверху для котиков */
             gap: 20px;
             position: relative; /* Для позиционирования сердечек относительно контейнера */
         }
@@ -59,7 +61,7 @@
         button { 
             padding: 12px 24px; 
             font-size: 16px; 
-            margin: 10px; 
+            margin: 20px 10px 10px; /* Увеличен отступ сверху для кнопки топа */
             background: rgba(255, 255, 255, 0.1); /* Полупрозрачный стекло-эффект в стиле Apple/Telegram */
             backdrop-filter: blur(10px); /* Размытие для современности */
             border: 1px solid rgba(255, 255, 255, 0.2); 
@@ -92,7 +94,7 @@
             color: #ffffff; 
             font-size: 22px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin: 20px 0 10px 0; /* Увеличен отступ сверху для заголовка */
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         p {
@@ -258,8 +260,8 @@
     <div class="content-wrapper">
         <h1>Кеша и Кекс снимают стресс!❤️</h1>
         <div class="cat-container" id="catContainer">
-            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)" onclick="clickCat(1)">
-            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
+            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)">
+            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
         </div>
         <div id="score">Очки уюта: 0</div>
         <button onclick="showLeaderboard()">🏆 Показать топ</button>
@@ -510,7 +512,7 @@
             }
             const index = specialThresholds.indexOf(threshold);
             const isEven = index % 2 === 0;
-            let text = isEven ? `Мамми, это что "${threshold}" тапов?😽` : `Паппи, ты это виделб?! 😻`;
+            let text = isEven ? `${threshold} тапов♥️! Мамми, это столько много! 😽` : `${threshold} тапов♥️! Паппи, ты это видел?!😻`;
             const achText = document.getElementById('special-ach-text');
             achText.innerText = text;
             const elem = document.getElementById('specialAchievement');
@@ -595,6 +597,19 @@
             const audio = document.getElementById('backgroundMusic');
             audio.volume = 0.3; // Тихо, чтобы не мешало
             audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
+
+            // Добавляем обработчики touchstart для поддержки мультитача (одновременные тапы на двух котах)
+            const cat1 = document.getElementById('cat1');
+            const cat2 = document.getElementById('cat2');
+            cat1.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Предотвращаем стандартное поведение для немедленного отклика
+                clickCat(1);
+            }, { passive: false });
+            cat2.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                clickCat(2);
+            }, { passive: false });
+            // Оставляем onclick для десктопа/мыши
         };
 
         // MainButton отключена — автосейв в clickCat, кнопка не показывается
