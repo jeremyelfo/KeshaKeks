@@ -98,10 +98,10 @@
             font-size: 14px;
             margin-top: 15px;
         }
-        /* Ачивка-уведомление: адаптировано под тёмную тему */
+        /* Ачивка-уведомление: адаптировано под тёмную тему, теперь внизу */
         .achievement {
             position: fixed;
-            top: 20%;
+            bottom: 20%; /* В нижней части экрана */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8); /* Тёмный фон */
@@ -122,12 +122,12 @@
         .achievement.show {
             opacity: 1;
             display: block;
-            animation: bounce 0.5s ease;
+            animation: bounceUp 0.5s ease; /* Анимация снизу вверх */
         }
-        @keyframes bounce {
+        @keyframes bounceUp {
             0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(-10px); }
-            60% { transform: translateX(-50%) translateY(-5px); }
+            40% { transform: translateX(-50%) translateY(10px); } /* Начинается снизу */
+            60% { transform: translateX(-50%) translateY(5px); }
         }
         /* Анимация сердечек: летают вверх от котов */
         .heart {
@@ -149,14 +149,14 @@
                 transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
             }
         }
-        /* Модальное окно: тёмная тема, стекло-эффект */
+        /* Модальное окно: тёмная тема, стекло-эффект, менее прозрачное и в цветах приложения */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9); /* Увеличена тьма для лучшего затемнения */
+            background: rgba(0, 0, 0, 0.95); /* Ещё темнее для лучшего затемнения */
             backdrop-filter: blur(10px);
             display: none; /* Изначально скрыто полностью, чтобы не блокировать события */
             justify-content: center;
@@ -170,14 +170,14 @@
             opacity: 1;
         }
         .modal-content {
-            background: rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,46,0.95) 50%, rgba(22,33,62,0.95) 100%); /* Градиент в цветах приложения, менее прозрачный */
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             padding: 40px 20px;
             text-align: center;
             color: #ffffff;
-            font-family: 'SF Pro Display', sans-serif;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif; /* Шрифт как у Apple/Telegram */
             font-size: 18px;
             font-weight: 500;
             max-width: 80%;
@@ -186,6 +186,7 @@
         .modal-content p {
             margin: 0;
             color: #e0e0e0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Тень для лучшей читаемости */
         }
         .close-btn {
             background: rgba(255, 255, 255, 0.15);
@@ -220,7 +221,7 @@
         </div>
         <div id="score">Очки: 0</div>
         <button onclick="showLeaderboard()">🏆 Показать топ</button>
-        <p>Котики мурлычут в унисон! Общий счёт растёт от обоих. 😻</p>
+        <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
     </div>
 
     <!-- Элемент для показа ачивок (вместо alert, для стиля) -->
@@ -259,16 +260,23 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg"
         ];
 
-        // Расширенные пороги для ачивок
+        // Расширенные пороги для ачивок (добавлены 1 и 50)
         const achievementThresholds = [
-            100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+            1, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
             10999, 11999, 12999, 13999, 14999, 15999, 16999, 17999, 18999, 19999,
             1300, 1500, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
             6000, 7000, 8000, 9000, 9999, 25000, 30000, 40000, 50000, 75000, 100000
         ];
         const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
 
-        function createHeart(x, y) {
+        // Пороги для салюта
+        const saluteThresholds = [
+            100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 9999,
+            10999, 11999, 12999, 13999, 14999, 15999, 16999, 17999, 18999, 19999,
+            25000, 30000, 40000, 50000, 75000, 100000
+        ];
+
+        function createHeart(x, y, container = document.body) {
             const heart = document.createElement('div');
             heart.innerHTML = '♥️';
             heart.className = 'heart';
@@ -280,11 +288,27 @@
             // Случайный размер для милоты
             const randSize = 0.8 + Math.random() * 0.4;
             heart.style.fontSize = (24 * randSize) + 'px';
-            document.getElementById('catContainer').appendChild(heart);
+            container.appendChild(heart);
             // Удаляем после анимации
             setTimeout(() => {
                 heart.remove();
             }, 1000);
+        }
+
+        // Функция салюта: много сердечек по экрану
+        function launchSalute() {
+            const numHearts = 50; // Количество сердечек в салюте
+            for (let i = 0; i < numHearts; i++) {
+                // Случайная стартовая позиция по всему экрану
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                // Добавляем задержку для волны
+                setTimeout(() => createHeart(x, y, document.body), i * 50);
+            }
+            // Вибрация
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+            }
         }
 
         function showAchievement(threshold) {
@@ -306,7 +330,10 @@
             if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
                 unlockedAchievements.add(newScore);
                 showAchievement(newScore);
-                // Альтернатива: tg.showAlert(`Поздравляем! Ачивка "${newScore} тапов" разблокирована! 🏆`);
+                // Проверяем на салют
+                if (saluteThresholds.includes(newScore)) {
+                    launchSalute();
+                }
             }
         }
 
@@ -371,3 +398,4 @@
         }).show();
     </script>
 </body>
+</html>
