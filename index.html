@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -150,14 +149,73 @@
                 transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
             }
         }
+        /* Модальное окно: тёмная тема, стекло-эффект */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal.show {
+            opacity: 1;
+        }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            color: #ffffff;
+            font-family: 'SF Pro Display', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            max-width: 80%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .modal-content p {
+            margin: 0;
+            color: #e0e0e0;
+        }
+        .close-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #e0e0e0;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
+    <!-- Модальное окно приветствия -->
+    <div id="welcomeModal" class="modal">
+        <div class="modal-content">
+            <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
+            <button class="close-btn" onclick="closeModal()">Начать мурлыкать!</button>
+        </div>
+    </div>
+
     <div class="content-wrapper">
         <h1>Кеша и Кекс снимают стресс!❤️</h1>
         <div class="cat-container" id="catContainer">
             <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)" onclick="clickCat(1)">
-            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
+            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2551.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
         </div>
         <div id="score">Очки: 0</div>
         <button onclick="showLeaderboard()">🏆 Показать топ</button>
@@ -168,6 +226,12 @@
     <div id="achievement" class="achievement">
         <span id="ach-text"></span> 🏆
     </div>
+
+    <!-- Фоновый звук мурлыканья -->
+    <audio id="backgroundMusic" loop autoplay>
+        <source src="mur.mp3" type="audio/mpeg">
+        Ваш браузер не поддерживает аудио.
+    </audio>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -194,11 +258,12 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2547.jpeg"
         ];
 
-        // Пороги для ачивок
+        // Расширенные пороги для ачивок
         const achievementThresholds = [
             100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+            10999, 11999, 12999, 13999, 14999, 15999, 16999, 17999, 18999, 19999,
             1300, 1500, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
-            6000, 7000, 8000, 9000, 9999
+            6000, 7000, 8000, 9000, 9999, 25000, 30000, 40000, 50000, 75000, 100000
         ];
         const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
 
@@ -222,6 +287,11 @@
         }
 
         function showAchievement(threshold) {
+            // Вибрация при ачивке
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+            }
+
             const achText = document.getElementById('ach-text');
             achText.innerText = `Ачивка разблокирована: ${threshold} тапов! 🎉`;
             const elem = document.getElementById('achievement');
@@ -277,6 +347,22 @@
             tg.GameProxy.showLeaderboard();
         }
 
+        // Модалка при загрузке
+        function closeModal() {
+            const modal = document.getElementById('welcomeModal');
+            modal.classList.remove('show');
+        }
+
+        // Инициализация
+        window.onload = function() {
+            const modal = document.getElementById('welcomeModal');
+            modal.classList.add('show');
+            // Запуск фонового звука
+            const audio = document.getElementById('backgroundMusic');
+            audio.volume = 0.3; // Тихо, чтобы не мешало
+            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
+        };
+
         // Инициализация кнопки
         tg.MainButton.setText('Сохранить поглаживания').onClick(() => { 
             // Автосейв при клике на MainButton
@@ -284,5 +370,3 @@
         }).show();
     </script>
 </body>
-</html>
-```
