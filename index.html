@@ -77,6 +77,38 @@
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
+        /* Вкладки лидерборда */
+        .leaderboard-tabs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin: 0 0 12px 0;
+            padding: 6px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+        }
+        .leaderboard-tab {
+            flex: 1;
+            min-height: 36px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #e0e0e0;
+            font-weight: 600;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .leaderboard-tab.is-active {
+            color: #ffffff;
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.18);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+
         #leaderboardList {
             list-style: none;
             padding: 0;
@@ -262,8 +294,8 @@
         .content-wrapper {
             /* Опускаем контент ниже заголовка и нового блока ачивок (2 ряда) */
             padding-top: calc(env(safe-area-inset-top, 20px) + 200px);
-            /* Минимальный безопасный отступ снизу — равный зазор + футер */
-            padding-bottom: calc(var(--tap-margin) + var(--footer-safe-height) + env(safe-area-inset-bottom, 0px));
+            /* Фиксированный отступ снизу без адаптивности */
+            padding-bottom: 160px;
             max-width: 90%;
             margin: 0 auto;
         }
@@ -273,47 +305,41 @@
         /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
 
         .tap-zone {
-
+            /* Без адаптивности: фиксированные отступы и высота */
             display: block;
-
-            /* равные отступы слева/справа */
             position: fixed;
-            left: var(--tap-margin);
-            right: var(--tap-margin);
+            left: 16px;
+            right: 16px;
+            bottom: 64px; /* чтобы не наезжать на футер */
+            height: 280px; /* фиксированная высота */
 
-            height: var(--tap-zone-height, 40vh); /* Адаптивная высота (JS может переопределить) */
-
-            /* top и height будут вычисляться скриптом, чтобы выдержать одинаковые отступы сверху/снизу */
-            /* bottom убран, чтобы не конфликтовать с расчётом top/height */
-
-            /* Растягиваем на всю доступную область */
-            min-height: var(--tap-zone-min-height, calc(50vh - 100px)); 
-
-            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.08));
-
-            border: none;
-            border-radius: var(--tap-radius, 20px);
+            /* iOS/Apple-like glass surface */
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 20px;
+            backdrop-filter: saturate(180%) blur(18px);
+            -webkit-backdrop-filter: saturate(180%) blur(18px);
 
             cursor: pointer;
-
             z-index: 10;
-
             margin: 0;
-
             padding: 0;
-
             /* Эффект наклона/перспектива и объём */
             transform-style: preserve-3d;
-            transition: transform 150ms ease, box-shadow 150ms ease;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -6px 10px rgba(0,0,0,0.28), 0 10px 18px rgba(0,0,0,0.25);
+            transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -6px 12px rgba(0,0,0,0.28), 0 10px 24px rgba(0,0,0,0.25);
+        }
+        .tap-zone:active { 
+            transform: scale(0.985);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -8px 14px rgba(0,0,0,0.30), 0 8px 18px rgba(0,0,0,0.20);
         }
 
         /* Визуальная рамка для зоны тапа */
         .tap-zone::before {
             content: "";
             position: absolute;
-            inset: var(--tap-inset, 10px);
-            border-radius: calc(var(--tap-radius, 20px) - 4px);
+            inset: 10px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.18);
             /* имитация объёма: внутренняя каёмка и мягкая боковая подсветка */
             box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset,
@@ -402,11 +428,15 @@
             margin-bottom: 5px;
         }
         
-        /* Однострочная подпись с масштабированием под экран */
-        p.subtitle-one { 
-            margin-top: 8px; margin-bottom: 10px; 
-            white-space: nowrap; 
-            font-size: clamp(12px, 3.4vw, 16px);
+        /* Подпись без адаптивного масштаба — перенос строк включён */
+        p.subtitle-one {
+            margin-top: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            max-width: 100%;
         }
 
         #score {
@@ -538,58 +568,6 @@
         }
 
 
-        /* Адаптивные размеры под разные экраны */
-        :root {
-            --cat-size: clamp(110px, 28vw, 180px);
-            --tap-zone-height: clamp(35vh, 42vh, 50vh);
-            --tap-zone-min-height: clamp(30vh, 38vh, 45vh);
-            --ach-scale: clamp(0.72, calc(100vw / 420), 1); /* масштаб блока ачивок для узких экранов */
-            --footer-safe-height: 40px; /* зона под футер вне зоны тапа */
-            --tap-margin: clamp(14px, 4vw, 24px); /* единый внешний отступ зоны тапа справа/слева и сверху/снизу */
-            --tap-inset: 10px; /* внутренний отступ рамки зоны */
-            --tap-radius: 20px; /* скругление зоны */
-        }
-
-        /* Маленькие экраны (узкие телефоны) */
-        @media (max-width: 360px) {
-            :root {
-                --tap-zone-height: clamp(42vh, 46vh, 52vh);
-                --tap-zone-min-height: 34vh;
-                --tap-margin: 10px;
-                --tap-inset: 8px;
-                --tap-radius: 16px;
-            }
-        }
-
-        /* Средние телефоны */
-        @media (min-width: 361px) and (max-width: 520px) {
-            :root {
-                --tap-zone-height: clamp(38vh, 44vh, 50vh);
-                --tap-zone-min-height: 34vh;
-                --tap-margin: 12px;
-                --tap-inset: 10px;
-                --tap-radius: 18px;
-            }
-        }
-
-        /* Планшеты и шире */
-        @media (min-width: 521px) {
-            :root {
-                --tap-zone-height: clamp(32vh, 38vh, 44vh);
-                --tap-zone-min-height: 30vh;
-                --tap-margin: 16px;
-                --tap-inset: 12px;
-                --tap-radius: 24px;
-            }
-        }
-
-        /* Ландшафтная ориентация: понижаем высоту */
-        @media (orientation: landscape) {
-            :root {
-                --tap-zone-height: clamp(28vh, 32vh, 36vh);
-                --tap-zone-min-height: 28vh;
-            }
-        }
 
     </style>
 
@@ -648,6 +626,11 @@
         <div class="modal-content">
 
             <h2>🏆 Топ игроков</h2>
+
+            <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard Tabs">
+                <button class="leaderboard-tab is-active" id="tabRun" data-tab="run" role="tab" aria-selected="true">За один заход</button>
+                <button class="leaderboard-tab" id="tabTotal" data-tab="total" role="tab" aria-selected="false">За всё время</button>
+            </div>
 
             <ul id="leaderboardList"></ul>
 
@@ -723,7 +706,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             try { decideWelcomeModal(); } catch (_) {}
-            try { layoutTapZone(); } catch (_) {}
+            try { loadServerProgress().then(() => { try { restoreAchievementGridFromScore(); } catch(_){} }); } catch (_) {}
         });
 
         // Инициализация Supabase
@@ -881,105 +864,102 @@
             }
         }
 
-        async function getLeaderboardTop() {
-            if (!supabaseClient) {
-                console.warn('[getLeaderboardTop] Supabase клиент не инициализирован');
-                return [];
-            }
-
-            console.log('[getLeaderboardTop] Начало загрузки лидерборда');
-
+        async function getLeaderboardTopRun() {
+            if (!supabaseClient) { console.warn('[getLeaderboardTopRun] Supabase не инициализирован'); return []; }
             try {
-                const { data, error, count } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('leaderboard')
-                    .select('username, max_score, telegram_id', { count: 'exact' })
+                    .select('username, max_score, telegram_id')
                     .order('max_score', { ascending: false })
                     .limit(10);
-
-                console.log('[getLeaderboardTop] Ответ от Supabase:', { 
-                    dataLength: data ? data.length : 0, 
-                    hasError: !!error,
-                    count: count 
-                });
-
-                if (error) {
-                    console.error('[getLeaderboardTop] Ошибка при получении топа:', error);
-                    console.error('[getLeaderboardTop] Детали ошибки:', JSON.stringify(error, null, 2));
-                    return [];
-                }
-
-                if (!data) {
-                    console.warn('[getLeaderboardTop] Данные не получены (data = null)');
-                    return [];
-                }
-
-                if (data.length === 0) {
-                    console.log('[getLeaderboardTop] Лидерборд пуст');
-                } else {
-                    console.log('[getLeaderboardTop] Получено записей:', data.length);
-                    console.log('[getLeaderboardTop] Первые записи:', data.slice(0, 3));
-                }
-
-                return data;
-            } catch (error) {
-                console.error('[getLeaderboardTop] Критическая ошибка:', error);
-                console.error('[getLeaderboardTop] Stack trace:', error.stack);
-                return [];
-            }
+                if (error) { console.error('[getLeaderboardTopRun] error', error); return []; }
+                return data || [];
+            } catch (e) { console.error('[getLeaderboardTopRun] catch', e); return []; }
+        }
+        async function getLeaderboardTopTotal() {
+            if (!supabaseClient) { console.warn('[getLeaderboardTopTotal] Supabase не инициализирован'); return []; }
+            try {
+                const { data, error } = await supabaseClient
+                    .from('leaderboard')
+                    .select('username, total_score, telegram_id')
+                    .order('total_score', { ascending: false })
+                    .limit(10);
+                if (error) { console.error('[getLeaderboardTopTotal] error', error); return []; }
+                return data || [];
+            } catch (e) { console.error('[getLeaderboardTopTotal] catch', e); return []; }
         }
 
         async function showLeaderboard() {
             console.log('[showLeaderboard] Открытие лидерборда');
-            
             try {
                 const leaderboardModal = document.getElementById('leaderboardModal');
                 const leaderboardList = document.getElementById('leaderboardList');
-                
-                if (!leaderboardModal || !leaderboardList) {
+                const tabRun = document.getElementById('tabRun');
+                const tabTotal = document.getElementById('tabTotal');
+                if (!leaderboardModal || !leaderboardList || !tabRun || !tabTotal) {
                     console.error('[showLeaderboard] Элементы модального окна не найдены');
                     return;
                 }
+                const setActive = (mode) => {
+                    if (mode === 'run') {
+                        tabRun.classList.add('is-active'); tabRun.setAttribute('aria-selected','true');
+                        tabTotal.classList.remove('is-active'); tabTotal.setAttribute('aria-selected','false');
+                    } else {
+                        tabTotal.classList.add('is-active'); tabTotal.setAttribute('aria-selected','true');
+                        tabRun.classList.remove('is-active'); tabRun.setAttribute('aria-selected','false');
+                    }
+                };
+                const render = (data, mode) => {
+                    leaderboardList.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        const li = document.createElement('li');
+                        li.textContent = 'Пока нет рекордов';
+                        li.style.color = '#b0b0b0';
+                        li.style.textAlign = 'center';
+                        li.style.padding = '20px 0';
+                        leaderboardList.appendChild(li);
+                        return;
+                    }
+                    data.forEach((item, index) => {
+                        const li = document.createElement('li');
+                        if (mode === 'run') {
+                            li.textContent = `${index + 1}. ${item.username || 'Аноним'} — ${item.max_score} очков за заход`;
+                        } else {
+                            li.textContent = `${index + 1}. ${item.username || 'Аноним'} — ${item.total_score} всего`;
+                        }
+                        leaderboardList.appendChild(li);
+                    });
+                };
 
-                // Показываем индикатор загрузки
                 leaderboardList.innerHTML = '<li style="color: #b0b0b0;">Загрузка...</li>';
                 leaderboardModal.classList.add('show');
                 leaderboardModal.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('has-modal');
 
-                console.log('[showLeaderboard] Запрос данных лидерборда...');
-                const leaderboardData = await getLeaderboardTop();
-                console.log('[showLeaderboard] Получено данных:', leaderboardData.length);
-                
-                // Инициализация чекбокса лёгкого режима
+                // Лёгкий режим чекбокс
                 const chk = document.getElementById('lightModeToggle');
-                if (chk) {
-                    chk.checked = !!getLightMode();
-                    chk.onchange = () => setLightMode(chk.checked);
-                }
-                
-                leaderboardList.innerHTML = '';
+                if (chk) { chk.checked = !!getLightMode(); chk.onchange = () => setLightMode(chk.checked); }
 
-                if (!leaderboardData || leaderboardData.length === 0) {
-                    console.log('[showLeaderboard] Нет данных для отображения');
-                    const li = document.createElement('li');
-                    li.textContent = 'Пока нет рекордов';
-                    li.style.color = '#b0b0b0';
-                    li.style.textAlign = 'center';
-                    li.style.padding = '20px 0';
-                    leaderboardList.appendChild(li);
-                } else {
-                    console.log('[showLeaderboard] Отображение', leaderboardData.length, 'записей');
-                    leaderboardData.forEach((item, index) => {
-                        const { username, max_score } = item;
-                        const li = document.createElement('li');
-                        li.textContent = `${index + 1}. ${username || 'Аноним'} - ${max_score} очков`;
-                        leaderboardList.appendChild(li);
-                        console.log(`[showLeaderboard] Добавлена запись ${index + 1}:`, { username, max_score });
-                    });
-                }
+                // Навешиваем обработчики вкладок (один раз на открытие)
+                tabRun.onclick = async () => {
+                    setActive('run');
+                    leaderboardList.innerHTML = '<li style="color: #b0b0b0;">Загрузка...</li>';
+                    const data = await getLeaderboardTopRun();
+                    render(data, 'run');
+                };
+                tabTotal.onclick = async () => {
+                    setActive('total');
+                    leaderboardList.innerHTML = '<li style="color: #b0b0b0;">Загрузка...</li>';
+                    const data = await getLeaderboardTopTotal();
+                    render(data, 'total');
+                };
+
+                // По умолчанию показываем «За один заход»
+                setActive('run');
+                const data = await getLeaderboardTopRun();
+                render(data, 'run');
             } catch (error) {
                 console.error('[showLeaderboard] Ошибка при показе лидерборда:', error);
-                console.error('[showLeaderboard] Stack trace:', error.stack);
                 const leaderboardList = document.getElementById('leaderboardList');
                 if (leaderboardList) {
                     leaderboardList.innerHTML = '<li style="color: #ff6b6b; text-align: center; padding: 20px 0;">Ошибка загрузки данных</li>';
@@ -1040,13 +1020,16 @@
                 console.error('[testLeaderboard] Ошибка в тесте 2:', error);
             }
 
-            // Тест 3: Вызов функции getLeaderboardTop
-            console.log('[testLeaderboard] Тест 3: Вызов getLeaderboardTop()');
-            const leaderboardData = await getLeaderboardTop();
-            console.log('[testLeaderboard] Результат getLeaderboardTop:', leaderboardData);
+            // Тест 3: Вызов функций топов
+            console.log('[testLeaderboard] Тест 3: Вызов getLeaderboardTopRun() и getLeaderboardTopTotal()');
+            const topRun = await getLeaderboardTopRun();
+            const topTotal = await getLeaderboardTopTotal();
+            console.log('[testLeaderboard] Результат getLeaderboardTopRun:', topRun);
+            console.log('[testLeaderboard] Результат getLeaderboardTopTotal:', topTotal);
         };
 
-        let score = 0;
+        let score = 0;            // total_score (за всё время)
+        let runScore = 0;          // счёт текущего захода (сессии)
 
         let cat1Index = 0;
 
@@ -1539,6 +1522,7 @@
             if (inputLocked) return;
 
             score++;
+            runScore++;
 
             document.getElementById('score').innerText = `Очки уюта: ${score}`;
 
@@ -1547,13 +1531,7 @@
             // Обновляем счёт в Supabase асинхронно (неблокирующий вызов)
             const user = tg.initDataUnsafe?.user;
             if (user && supabaseClient) {
-                console.log('[clickCat] Обновление счёта в Supabase:', { 
-                    userId: user.id, 
-                    username: user.username, 
-                    score: score 
-                });
-                // Вызываем без await, чтобы не блокировать UI
-                updateScore(user.id, user.username || 'anon', score).catch(err => {
+                updateScores(user.id, user.username || 'anon', runScore, score).catch(err => {
                     console.error('[clickCat] Ошибка при сохранении счета:', err);
                 });
             } else {
@@ -1664,7 +1642,6 @@
             document.body.classList.remove('has-modal');
 
             inputLocked = false;
-            try { layoutTapZone(); } catch (_) {}
 
         }
 
@@ -1692,7 +1669,6 @@
             m.classList.add('show');
             m.setAttribute('aria-hidden','false');
             document.body.classList.add('has-modal');
-            try { layoutTapZone(); } catch (_) {}
             const i = document.getElementById('firstNameInput');
             if (i) i.focus();
         }
@@ -1737,6 +1713,51 @@
                 try { layoutTapZone(); } catch (_) {}
             }catch(e){ setFirstNameError('Ошибка, попробуйте ещё раз'); console.warn('[saveFirstTimeName]', e); }
         }
+        // Локальное сохранение/восстановление прогресса (без адаптивности)
+        async function loadServerProgress() {
+            try {
+                const user = tg.initDataUnsafe?.user;
+                if (!user || !supabaseClient) {
+                    // Фолбэк на локальное сохранение, если оффлайн/нет Telegram
+                    try {
+                        const raw = localStorage.getItem('kk_current_score');
+                        const s = raw ? parseInt(raw, 10) : 0;
+                        if (!isNaN(s) && s > 0) score = s;
+                    } catch (_) {}
+                    const el = document.getElementById('score');
+                    if (el) el.innerText = `Очки уюта: ${score}`;
+                    return;
+                }
+                const { data, error } = await supabaseClient
+                    .from('leaderboard')
+                    .select('total_score, max_score, username')
+                    .eq('telegram_id', user.id)
+                    .maybeSingle();
+                if (error) { console.warn('[loadServerProgress] error', error); }
+                const total = (data && typeof data.total_score === 'number') ? data.total_score : 0;
+                score = total;
+                runScore = 0;
+                const el = document.getElementById('score');
+                if (el) el.innerText = `Очки уюта: ${score}`;
+            } catch (e) { console.warn('[loadServerProgress] catch', e); }
+        }
+        function restoreAchievementGridFromScore() {
+            try {
+                const thresholds = Object.keys(achSlotMapping).map(k => parseInt(k, 10)).sort((a, b) => a - b);
+                thresholds.forEach(th => {
+                    if (score >= th) {
+                        const slotId = `ach-slot-${achSlotMapping[th]}`;
+                        const slot = document.getElementById(slotId);
+                        if (slot) {
+                            slot.classList.add('unlocked');
+                            slot.onclick = () => alert(`Ачивка разблокирована: ${th} тапов!`);
+                        }
+                        unlockedAchievements.add(th);
+                    }
+                });
+            } catch (_) {}
+        }
+
         function getCssVarPx(name, fallback) {
             try {
                 const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -1745,36 +1766,53 @@
                 const n = parseFloat(v); return isNaN(n) ? fallback : n;
             } catch (_) { return fallback; }
         }
-        function layoutTapZone() {
-            const tz = document.getElementById('tapZone');
-            const cw = document.querySelector('.content-wrapper');
-            const footer = document.getElementById('footer');
-            if (!tz || !cw || !footer) return;
-            const margin = getCssVarPx('--tap-margin', 16);
-            const minHHard = Math.max(140, Math.round(window.innerHeight * 0.22));
 
-            const cbr = cw.getBoundingClientRect();
-            const fbr = footer.getBoundingClientRect();
+        // Обновление счётов на сервере: max_score (лучший заход) + total_score (всё время)
+        async function updateScores(telegramId, username, runVal, totalVal) {
+            if (!supabaseClient) { console.warn('[updateScores] Supabase не инициализирован'); return; }
+            const userId = typeof telegramId === 'string' ? parseInt(telegramId, 10) : telegramId;
+            const effectiveUsername = getEffectiveUsername(username);
+            try {
+                // 1) Пробуем атомарный RPC, если настроен на бэке
+                try {
+                    const { error: rpcErr } = await supabaseClient.rpc('set_scores', {
+                        p_telegram_id: userId,
+                        p_username: effectiveUsername,
+                        p_run_score: runVal,
+                        p_total_score: totalVal
+                    });
+                    if (!rpcErr) { console.log('[updateScores] RPC set_scores: успех'); return; }
+                    console.warn('[updateScores] RPC set_scores ошибка, fallback на upsert', rpcErr);
+                } catch (e) { console.warn('[updateScores] RPC не доступен, fallback', e); }
 
-            // Верхняя граница: низ контента + margin, но не ближе, чем margin к верхнему краю
-            let top = Math.max(Math.round(cbr.bottom + margin), margin);
-
-            // Нижняя граница: минимум из (верх футера, нижний край экрана) минус margin
-            const screenBottom = window.innerHeight;
-            const bottomBound = Math.round(Math.min(fbr.top, screenBottom) - margin);
-
-            // Высота: максимально возможная между top и bottomBound, но не меньше минимальной (если хватает места)
-            let height = bottomBound - top;
-            if (height < minHHard) {
-                // Если места мало, используем доступную высоту (не уходим в отрицательные значения)
-                height = Math.max(0, height);
-            }
-
-            // Применяем рассчитанные размеры/позицию
-            tz.style.top = top + 'px';
-            tz.style.height = height + 'px';
-            tz.style.left = margin + 'px';
-            tz.style.right = margin + 'px';
+                // 2) Fallback: читаем текущие значения и апдейтим
+                const { data, error } = await supabaseClient
+                    .from('leaderboard')
+                    .select('max_score, total_score')
+                    .eq('telegram_id', userId)
+                    .maybeSingle();
+                if (error) { console.warn('[updateScores] select error', error); }
+                const currentMax = (data && typeof data.max_score === 'number') ? data.max_score : 0;
+                const currentTotal = (data && typeof data.total_score === 'number') ? data.total_score : 0;
+                const nextMax = runVal > currentMax ? runVal : currentMax;
+                const nextTotal = totalVal > currentTotal ? totalVal : currentTotal;
+                const recordData = {
+                    telegram_id: userId,
+                    username: effectiveUsername,
+                    max_score: nextMax,
+                    total_score: nextTotal,
+                    updated_at: new Date().toISOString()
+                };
+                const { error: upsertErr } = await supabaseClient
+                    .from('leaderboard')
+                    .upsert(recordData, { onConflict: 'telegram_id' })
+                    .select();
+                if (upsertErr) {
+                    console.error('[updateScores] upsert error', upsertErr);
+                } else {
+                    console.log('[updateScores] upsert OK', recordData);
+                }
+            } catch (e) { console.error('[updateScores] catch', e); }
         }
         async function decideWelcomeModal(){
             try{
@@ -1930,9 +1968,6 @@
             }
 
             // Ресайз/ориентация — поддерживаем одинаковые отступы
-            window.addEventListener('resize', () => { try { layoutTapZone(); } catch (_) {} });
-            window.addEventListener('orientationchange', () => { try { layoutTapZone(); } catch (_) {} });
-            setTimeout(() => { try { layoutTapZone(); } catch (_) {} }, 0);
 
             // 3. Обработчик закрытия модального окна лидерборда при клике на фон
             const leaderboardModal = document.getElementById('leaderboardModal');
