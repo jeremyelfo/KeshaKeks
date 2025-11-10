@@ -275,7 +275,7 @@
 
             width: 100vw; /* Ширина на весь экран */
 
-            height: 40vh; /* Высота на 40% от высоты видимой части экрана */
+            height: var(--tap-zone-height, 40vh); /* Адаптивная высота */
 
             position: fixed;
 
@@ -285,7 +285,7 @@
 
             /* Растягиваем на всю доступную область */
 
-            min-height: calc(50vh - 100px); 
+            min-height: var(--tap-zone-min-height, calc(50vh - 100px)); 
 
             background: transparent;
 
@@ -327,9 +327,9 @@
 
         .cat {
 
-            width: 150px;
+            width: var(--cat-size, 150px);
 
-            height: 150px;
+            height: var(--cat-size, 150px);
 
             cursor: pointer;
 
@@ -507,6 +507,22 @@
         }
 
 
+        /* Адаптивные размеры под разные экраны */
+        :root {
+            --cat-size: clamp(110px, 28vw, 180px);
+            --tap-zone-height: clamp(35vh, 42vh, 50vh);
+            --tap-zone-min-height: clamp(30vh, 38vh, 45vh);
+        }
+        @media (max-width: 360px) {
+            .achievement-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+        }
+        @media (min-width: 361px) and (max-width: 520px) {
+            .achievement-grid { grid-template-columns: repeat(5, minmax(0,1fr)); }
+        }
+        @media (min-width: 521px) {
+            .achievement-grid { grid-template-columns: repeat(6, minmax(0,1fr)); }
+        }
+
     </style>
 
 </head>
@@ -566,6 +582,12 @@
             <h2>🏆 Топ игроков</h2>
 
             <ul id="leaderboardList"></ul>
+
+            <div style="text-align:left;margin:10px 0 14px 0; display:flex; align-items:center; gap:10px;">
+                <label style="display:flex; align-items:center; gap:8px; color:#e0e0e0; font-size:14px;">
+                    <input type="checkbox" id="lightModeToggle" /> Лёгкий режим (меньше анимаций)
+                </label>
+            </div>
 
             <button class="primary-btn primary-btn--full" onclick="document.getElementById('leaderboardModal').classList.remove('show'); document.body.classList.remove('has-modal');">Закрыть</button>
 
@@ -678,6 +700,23 @@
             const saved = (getStoredDisplayName() || '').trim();
             return saved || (defaultUsername || 'Аноним');
         }
+
+        // Лёгкий режим (анимации)
+        function getLightMode() {
+            try {
+                const v = localStorage.getItem('kk_light_mode');
+                if (v === '1') return true;
+                if (v === '0') return false;
+            } catch (_) {}
+            // Авто: уважать системный reduced motion
+            try {
+                return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            } catch (_) { return false; }
+        }
+        function setLightMode(on) {
+            try { localStorage.setItem('kk_light_mode', on ? '1' : '0'); } catch (_) {}
+        }
+        function getCelebrationDurationMs() { return getLightMode() ? 2500 : 6000; }
 
         async function updateScore(telegramId, username, newScore) {
             if (!supabaseClient) {
@@ -835,6 +874,13 @@
                 const leaderboardData = await getLeaderboardTop();
                 console.log('[showLeaderboard] Получено данных:', leaderboardData.length);
                 
+                // Инициализация чекбокса лёгкого режима
+                const chk = document.getElementById('lightModeToggle');
+                if (chk) {
+                    chk.checked = !!getLightMode();
+                    chk.onchange = () => setLightMode(chk.checked);
+                }
+                
                 leaderboardList.innerHTML = '';
 
                 if (!leaderboardData || leaderboardData.length === 0) {
@@ -930,7 +976,7 @@
 
         let cat2Index = 0;
 
-        const CELEBRATION_DURATION_MS = 6000;
+        const CELEBRATION_DURATION_MS = 6000; // базовое значение; фактическая длительность берётся из getCelebrationDurationMs()
 
 
 
@@ -1082,7 +1128,9 @@
 
             particle.style.color = color;
 
-            particle.style.fontSize = (24 + Math.random() * 12) + 'px';
+            const light = getLightMode();
+            const baseSize = light ? 18 : 24;
+            particle.style.fontSize = (baseSize + Math.random() * (light ? 8 : 12)) + 'px';
 
             particle.style.pointerEvents = 'none';
 
@@ -1090,13 +1138,13 @@
 
 
 
-            const randX = (Math.random() - 0.5) * (isCelebration ? 400 : 80);
+            const randX = (Math.random() - 0.5) * (isCelebration ? (getLightMode() ? 200 : 400) : 80);
 
             particle.style.setProperty('--rand-x', randX + 'px');
 
 
 
-            const finalDuration = isCelebration ? duration : 1000;
+            const finalDuration = isCelebration ? duration : (getLightMode() ? 700 : 1000);
 
             particle.style.animation = `floatUp ${finalDuration / 1000}s ease-out forwards`;
 
@@ -1118,7 +1166,9 @@
 
         function launchSalute() {
 
-            const numHearts = 50;
+            const light = getLightMode();
+            const area = Math.min(1.0, (window.innerWidth * window.innerHeight) / (390*844)); // нормализация к iPhone 12 mini
+            const numHearts = Math.max(8, Math.round((light ? 16 : 50) * area));
 
             for (let i = 0; i < numHearts; i++) {
 
@@ -1126,14 +1176,13 @@
 
                 const y = Math.random() * window.innerHeight;
 
-                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body, CELEBRATION_DURATION_MS, true), i * 50);
+                const dur = getCelebrationDurationMs();
+                setTimeout(() => createParticle(x, y, '♥️', '#ff69b4', document.body, dur, true), i * (light ? 30 : 50));
 
             }
 
-            if (tg.HapticFeedback) {
-
-                tg.HapticFeedback.impactOccurred('heavy');
-
+            if (tg.HapticFeedback && !getLightMode()) {
+                tg.HapticFeedback.impactOccurred('medium');
             }
 
         }
@@ -1144,19 +1193,18 @@
 
         function launchMilestone() {
 
-            if (tg.HapticFeedback) {
-
-                tg.HapticFeedback.impactOccurred('heavy');
-
-                setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
-
+            const light = getLightMode();
+            const dur = getCelebrationDurationMs();
+            if (tg.HapticFeedback && !light) {
+                tg.HapticFeedback.impactOccurred('medium');
+                setTimeout(() => tg.HapticFeedback.impactOccurred('light'), 200);
             }
 
 
 
             // 1. Анимация фона на 6 секунд, мигающая сильнее
 
-            document.body.style.animation = `blink-strong 0.5s ease-in-out infinite`; 
+            document.body.style.animation = `blink-strong ${light ? '1s' : '0.5s'} ease-in-out infinite`; 
 
             
 
@@ -1166,7 +1214,7 @@
 
             const centerY = window.innerHeight / 2;
 
-            const numParticles = 30;
+            const numParticles = light ? 12 : 30;
 
             const emojis = ['🐾', '⭐', '✨', '🐱'];
 
@@ -1190,7 +1238,7 @@
 
                     const y = centerY + Math.sin(angle) * dist;
 
-                    createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true);
+                    createParticle(x, y, emoji, color, document.body, dur, true);
 
                 }, delay);
 
@@ -1204,7 +1252,7 @@
 
                 document.body.style.animation = '';
 
-            }, CELEBRATION_DURATION_MS);
+            }, dur);
 
         }
 
@@ -1222,7 +1270,10 @@
 
             // 1. Массовый шторм эмодзи по всему экрану
 
-            const numParticles = 100;
+            const light = getLightMode();
+            const dur = getCelebrationDurationMs();
+            const area = Math.min(1.2, (window.innerWidth * window.innerHeight) / (390*844));
+            const numParticles = Math.max(16, Math.round((light ? 40 : 100) * area));
 
             const superEmojis = ['😻', '🎉', '✨', '⭐', '🐾', '💖', '🌟', '🎊'];
 
@@ -1238,9 +1289,9 @@
 
                 const y = Math.random() * window.innerHeight;
 
-                const delay = i * 20;
+                const delay = i * (light ? 10 : 20);
 
-                setTimeout(() => createParticle(x, y, emoji, color, document.body, CELEBRATION_DURATION_MS, true), delay);
+                setTimeout(() => createParticle(x, y, emoji, color, document.body, dur, true), delay);
 
             }
 
@@ -1252,9 +1303,9 @@
 
             cats.forEach(cat => {
 
-                cat.style.animation = 'flash-strong 0.3s ease-in-out infinite'; // Более частое мигание
+                cat.style.animation = `flash-strong ${light ? '0.6s' : '0.3s'} ease-in-out infinite`;
 
-                setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS);
+                setTimeout(() => cat.style.animation = '', dur);
 
             });
 
@@ -1284,7 +1335,7 @@
 
                 flashIndex++;
 
-            }, 200);
+            }, light ? 350 : 200);
 
             setTimeout(() => {
 
@@ -1292,20 +1343,16 @@
 
                 document.body.style.background = originalBg;
 
-            }, CELEBRATION_DURATION_MS);
+            }, dur);
 
 
 
-            // 4. Интенсивная вибрация (6 секунд)
+            // 4. Интенсивная вибрация (light mode: упрощённая)
 
-            if (tg.HapticFeedback) {
-
-                for (let v = 0; v < CELEBRATION_DURATION_MS / 300; v++) {
-
-                    setTimeout(() => tg.HapticFeedback.impactOccurred('heavy'), v * 300);
-
+            if (tg.HapticFeedback && !light) {
+                for (let v = 0; v < dur / 400; v++) {
+                    setTimeout(() => tg.HapticFeedback.impactOccurred('light'), v * 400);
                 }
-
             }
 
 
@@ -1314,7 +1361,7 @@
 
             const achText = document.getElementById('ach-text');
 
-            achText.innerText = `${threshold} тапов! 🌈💥`; // Убрано слово "Достижение:"
+            achText.innerText = `${threshold} тапов! 🌈💥`;
 
             const elem = document.getElementById('achievement');
 
@@ -1324,7 +1371,7 @@
 
                 elem.classList.remove('show');
 
-            }, CELEBRATION_DURATION_MS - 2000);
+            }, Math.max(1200, getCelebrationDurationMs() - 1200));
 
         }
 
@@ -1540,67 +1587,6 @@
 
         }
 
-        // Имя пользователя (лидерборд)
-        function openNameModal() {
-            const m = document.getElementById('nameModal');
-            const input = document.getElementById('nameInput');
-            if (!m || !input) return;
-            input.value = getStoredDisplayName() || (tg.initDataUnsafe?.user?.username || '');
-            m.classList.add('show');
-            m.setAttribute('aria-hidden','false');
-            document.body.classList.add('has-modal');
-            input.focus();
-        }
-        async function saveName() {
-            try {
-                const input = document.getElementById('nameInput');
-                const newName = (input?.value || '').trim().slice(0, 24);
-                if (!newName) return;
-                setStoredDisplayName(newName);
-                const user = tg.initDataUnsafe?.user;
-                if (!user || !supabaseClient) return;
-                const userId = user.id;
-                // Получим текущий максимум, чтобы не понизить его в fallback-пути
-                const { data: cur, error: curErr } = await supabaseClient
-                    .from('leaderboard')
-                    .select('max_score')
-                    .eq('telegram_id', userId)
-                    .maybeSingle();
-                const currentMax = (cur && typeof cur.max_score === 'number') ? cur.max_score : 0;
-                // Попробуем RPC (если функция создана)
-                let rpcOk = false;
-                try {
-                    const { error: rpcError } = await supabaseClient.rpc('set_max_score', {
-                        p_telegram_id: userId,
-                        p_username: newName,
-                        p_new_score: currentMax
-                    });
-                    if (!rpcError) rpcOk = true;
-                } catch (_) {}
-                if (!rpcOk) {
-                    // Fallback: если строка есть — update username; если нет — upsert с сохранением текущего max_score
-                    const { data: updData, error: updErr } = await supabaseClient
-                        .from('leaderboard')
-                        .update({ username: newName, updated_at: new Date().toISOString() })
-                        .eq('telegram_id', userId)
-                        .select();
-                    if (updErr || !updData || updData.length === 0) {
-                        await supabaseClient
-                            .from('leaderboard')
-                            .upsert({ telegram_id: userId, username: newName, max_score: currentMax, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' })
-                            .select();
-                    }
-                }
-                const m = document.getElementById('nameModal');
-                if (m) { m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.classList.remove('has-modal'); }
-            } catch (e) {
-                console.warn('[saveName] error', e);
-            }
-        }
-
-        
-
-        // Регистрация при первом входе
         function setFirstNameError(msg){ try{ document.getElementById('firstNameError').textContent = msg || ''; } catch(_){} }
         function isValidName(name){
             const n = (name||'').trim();
