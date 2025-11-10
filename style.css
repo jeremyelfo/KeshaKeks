@@ -1,0 +1,19 @@
+/* --- СДВИГ КОНТЕНТА ВНИЗ --- */
+.content-wrapper {
+    /* Скорректированный отступ после удаления кнопок: */
+    padding-top: calc(env(safe-area-inset-top, 20px) + 100px); /* Уменьшенное значение, чтобы компенсировать удаленные кнопки, но сохранить положение */
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    max-width: 90%;
+    margin: 0 auto;
+}
+
+/* Измененный .top-fixed-elements для более компактного размещения оставшихся элементов */
+.top-fixed-elements {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Учитываем Telegram header + небольшой отступ */
+    padding-top: calc(env(safe-area-inset-top, 20px) + 5px); 
+    z-index: 1000;
+}
