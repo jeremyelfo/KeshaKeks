@@ -1,10 +1,8 @@
-
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- Отключаем зум при двойном тапе -->
     <title>Кеша и Кекс снимают стресс!</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;700&display=swap" rel="stylesheet">
@@ -19,6 +17,7 @@
             min-height: 100vh;
             position: relative;
             overflow: hidden; /* Чтобы сердечки не выходили за экран */
+            touch-action: manipulation; /* Предотвращаем зум и скролл при тапах */
         }
         /* Учёт Telegram хедера: отступ сверху для кнопок в углах */
         .content-wrapper {
@@ -40,6 +39,7 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1); /* Тёмная тень с лёгким бликом */
             border: 1px solid rgba(255,255,255,0.1); /* Тонкая, полупрозрачная рамка */
+            touch-action: manipulation; /* Для котов: предотвращаем зум */
         }
         .cat:hover { 
             transform: scale(1.05); 
@@ -126,10 +126,41 @@
             display: block;
             animation: bounceUp 0.5s ease; /* Анимация снизу вверх */
         }
+        /* Специальная ачивка (мамми/паппи): выше, отдельный элемент, не перекрывает обычную */
+        .special-achievement {
+            position: fixed;
+            top: 10%; /* Выше экрана, у верхнего края */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8); /* Тёмный фон */
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 16px;
+            font-family: 'SF Pro Display', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 1001; /* Выше обычной ачивки */
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: none;
+        }
+        .special-achievement.show {
+            opacity: 1;
+            display: block;
+            animation: bounceDown 0.5s ease; /* Анимация сверху вниз для отличия */
+        }
         @keyframes bounceUp {
             0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
             40% { transform: translateX(-50%) translateY(10px); } /* Начинается снизу */
             60% { transform: translateX(-50%) translateY(5px); }
+        }
+        @keyframes bounceDown {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); } /* Начинается сверху */
+            60% { transform: translateX(-50%) translateY(-5px); }
         }
         /* Анимация сердечек: летают вверх от котов */
         .heart {
@@ -235,9 +266,14 @@
         <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
     </div>
 
-    <!-- Элемент для показа ачивок (вместо alert, для стиля) -->
+    <!-- Элемент для показа обычных ачивок (вместо alert, для стиля) -->
     <div id="achievement" class="achievement">
         <span id="ach-text"></span> 🏆
+    </div>
+
+    <!-- Новый элемент для специальных ачивок (мамми/паппи) — выше и отдельно -->
+    <div id="specialAchievement" class="special-achievement">
+        <span id="special-ach-text"></span> 🏆
     </div>
 
     <!-- Фоновый звук мурлыканья -->
@@ -467,7 +503,7 @@
             }, 3000); // Скрыть через 3 сек
         }
 
-        // Новая функция для специальных ачивок
+        // Новая функция для специальных ачивок — использует отдельный элемент выше
         function showSpecialAchievement(threshold) {
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
@@ -475,9 +511,9 @@
             const index = specialThresholds.indexOf(threshold);
             const isEven = index % 2 === 0;
             let text = isEven ? `Мамми, это что "${threshold}" тапов?😽` : `Паппи, ты это виделб?! 😻`;
-            const achText = document.getElementById('ach-text');
+            const achText = document.getElementById('special-ach-text');
             achText.innerText = text;
-            const elem = document.getElementById('achievement');
+            const elem = document.getElementById('specialAchievement');
             elem.classList.add('show');
             setTimeout(() => {
                 elem.classList.remove('show');
@@ -533,9 +569,7 @@
                 document.getElementById('cat2').src = cat2Photos[cat2Index];
             }
 
-            // Отправляем общий счёт в Telegram
-            tg.MainButton.setText(`Очки уюта: ${score}`);
-            tg.MainButton.show();
+            // Автосейв счёта после каждого тапа (уже работает!)
             tg.GameProxy.setGameScore({ score: score }, (data) => {
                 if (data) {
                     // Можно добавить вибрацию: tg.HapticFeedback.impactOccurred('light');
@@ -563,11 +597,9 @@
             audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
         };
 
-        // Инициализация кнопки
-        tg.MainButton.setText('Сохранить поглаживания').onClick(() => { 
-            // Автосейв при клике на MainButton
-            tg.GameProxy.setGameScore({ score: score });
-        }).show();
+        // MainButton отключена — автосейв в clickCat, кнопка не показывается
+        tg.MainButton.setText('Очки уюта: 0'); // Опционально: текст для скрытой кнопки, если нужно
+        // .onClick и .show() убраны!
     </script>
     <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
 </body>
