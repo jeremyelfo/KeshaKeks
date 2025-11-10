@@ -1756,6 +1756,13 @@
                 const total = (data && typeof data.total_score === 'number') ? data.total_score : 0;
                 score = total;
                 runScore = 0;
+                // Если в БД есть username и локально не сохранён никнейм, подтянем его в localStorage,
+                // чтобы не затирать на сервере телеграм-ником при следующих апдейтах
+                try {
+                    const localName = (getStoredDisplayName() || '').trim();
+                    const dbName = (data && (data.username||'').trim()) || '';
+                    if (!localName && dbName) setStoredDisplayName(dbName);
+                } catch(_) {}
                 const el = document.getElementById('score');
                 if (el) el.innerText = `Очки уюта: ${score}`;
             } catch (e) { console.warn('[loadServerProgress] catch', e); }
@@ -1832,38 +1839,48 @@
         async function updateScores(telegramId, username, runVal, totalVal) {
             if (!supabaseClient) { console.warn('[updateScores] Supabase не инициализирован'); return; }
             const userId = typeof telegramId === 'string' ? parseInt(telegramId, 10) : telegramId;
-            const effectiveUsername = getEffectiveUsername(username);
+            const storedName = (getStoredDisplayName() || '').trim();
+            const hasLocalNick = storedName && /^[A-Za-zА-Яа-яЁё0-9_-]{4,15}$/.test(storedName);
             try {
-                // 1) Пробуем атомарный RPC, если настроен на бэке
-                try {
-                    const { error: rpcErr } = await supabaseClient.rpc('set_scores', {
-                        p_telegram_id: userId,
-                        p_username: effectiveUsername,
-                        p_run_score: runVal,
-                        p_total_score: totalVal
-                    });
-                    if (!rpcErr) { console.log('[updateScores] RPC set_scores: успех'); return; }
-                    console.warn('[updateScores] RPC set_scores ошибка, fallback на upsert', rpcErr);
-                } catch (e) { console.warn('[updateScores] RPC не доступен, fallback', e); }
+                // 1) Если есть локальный никнейм пользователя, можно безопасно прислать его на бэк атомарно
+                if (hasLocalNick) {
+                    try {
+                        const { error: rpcErr } = await supabaseClient.rpc('set_scores', {
+                            p_telegram_id: userId,
+                            p_username: storedName,
+                            p_run_score: runVal,
+                            p_total_score: totalVal
+                        });
+                        if (!rpcErr) { console.log('[updateScores] RPC set_scores: успех'); return; }
+                        console.warn('[updateScores] RPC set_scores ошибка, fallback на upsert', rpcErr);
+                    } catch (e) { console.warn('[updateScores] RPC не доступен, fallback', e); }
+                }
 
-                // 2) Fallback: читаем текущие значения и апдейтим
+                // 2) Fallback: читаем текущие значения и апдейтим, НЕ меняя username, если он не задан локально
                 const { data, error } = await supabaseClient
                     .from('leaderboard')
-                    .select('max_score, total_score')
+                    .select('max_score, total_score, username')
                     .eq('telegram_id', userId)
                     .maybeSingle();
                 if (error) { console.warn('[updateScores] select error', error); }
+                const exists = !!data;
                 const currentMax = (data && typeof data.max_score === 'number') ? data.max_score : 0;
                 const currentTotal = (data && typeof data.total_score === 'number') ? data.total_score : 0;
                 const nextMax = runVal > currentMax ? runVal : currentMax;
                 const nextTotal = totalVal > currentTotal ? totalVal : currentTotal;
                 const recordData = {
                     telegram_id: userId,
-                    username: effectiveUsername,
                     max_score: nextMax,
                     total_score: nextTotal,
                     updated_at: new Date().toISOString()
                 };
+                // Если записи ещё нет — зададим username: локальный ник или 'Аноним' (но не ник Telegram)
+                if (!exists) {
+                    recordData.username = hasLocalNick ? storedName : 'Аноним';
+                } else if (hasLocalNick) {
+                    // Если запись есть и у нас локально есть ник — синхронизируем его на сервере
+                    recordData.username = storedName;
+                }
                 const { error: upsertErr } = await supabaseClient
                     .from('leaderboard')
                     .upsert(recordData, { onConflict: 'telegram_id' })
