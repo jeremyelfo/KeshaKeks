@@ -29,6 +29,8 @@ async function verifyTelegramInitData(initData: string, botToken: string) {
   const params = new URLSearchParams(initData)
   const hash = params.get("hash") || ""
   params.delete("hash")
+  // Удаляем signature - оно не участвует в проверке
+  params.delete("signature")
 
   const pairs: string[] = []
   for (const [k, v] of Array.from(params.entries()).sort()) {
