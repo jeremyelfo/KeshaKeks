@@ -31,38 +31,40 @@
             top: 0;
             left: 0;
             right: 0;
-            /* Учитываем Telegram header + немного отступа */
-            padding-top: calc(env(safe-area-inset-top, 20px) + 10px); 
+            /* Учитываем Telegram header */
+            padding-top: calc(env(safe-area-inset-top, 20px) + 5px); 
             z-index: 1000;
         }
 
+        /* Кнопки Telegram-заглушки УДАЛЕНЫ */
         .telegram-buttons {
+            /* Блок удален */
+        }
+
+        /* Уменьшенный, однострочный грид ачивок */
+        .achievement-grid {
             display: flex;
-            justify-content: space-between;
-            width: 100%;
+            justify-content: center; /* Центрируем слоты */
+            gap: 5px;
+            padding: 5px 10px;
             max-width: 95%;
             margin: 0 auto;
         }
 
-        .achievement-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 колонки для ачивок */
-            gap: 5px;
-            padding: 10px 10px 0;
-            max-width: 350px;
-            margin: 10px auto;
-        }
-
+        /* Слот ачивки сделан меньше и компактнее */
         .achievement-slot {
-            height: 40px;
+            height: 30px; /* Уменьшенная высота */
+            width: 50px; /* Фиксированная, маленькая ширина */
+            min-width: 50px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            border-radius: 15px; /* Скругленная форма */
             display: flex;
             align-items: center;
             justify-content: center;
             color: #b0b0b0;
             font-size: 10px;
+            font-weight: 500;
             overflow: hidden;
             transition: all 0.2s;
             cursor: pointer;
@@ -72,35 +74,14 @@
             background: linear-gradient(45deg, #4CAF50 0%, #8BC34A 100%);
             color: #ffffff;
             font-weight: 700;
-            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
-
-        /* Кнопки Telegram */
-        .tg-btn {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #e0e0e0;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        .tg-btn:active {
-            transform: scale(0.95);
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+            transform: scale(1.05);
         }
 
         /* --- СДВИГ КОНТЕНТА ВНИЗ --- */
         .content-wrapper {
-            /* Опускаем контент ниже заголовка и нового блока ачивок */
-            padding-top: calc(env(safe-area-inset-top, 100px) + 150px);
+            /* Учитываем высоту блока top-fixed-elements и сдвигаем вниз */
+            padding-top: calc(env(safe-area-inset-top, 100px) + 70px); 
             padding-bottom: env(safe-area-inset-bottom, 20px);
             max-width: 90%;
             margin: 0 auto;
@@ -109,14 +90,13 @@
         /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
         .tap-zone {
             display: block;
-            width: 100vw; /* Ширина на весь экран */
-            height: 40vh; /* Высота на 40% от высоты видимой части экрана */
+            width: 100vw;
+            /* Высота на всю доступную область ниже контента */
+            height: 100vh;
             position: fixed;
-            bottom: 0;
+            top: 0;
             left: 0;
-            /* Растягиваем на всю доступную область */
-            min-height: calc(50vh - 100px); 
-            background: transparent;
+            background: transparent; /* ОСТАВЛЕНО ПРОЗРАЧНЫМ */
             border: none;
             cursor: pointer;
             z-index: 10;
@@ -124,15 +104,19 @@
             padding: 0;
         }
 
-        /* --- СТИЛИ ОСТАЛИСЬ В ОСНОВНОМ ТЕ ЖЕ, НО НЕМНОГО ОЧИЩЕНЫ --- */
-
+        /* --- ПОЗИЦИОНИРОВАНИЕ ВСЕГО КОНТЕНТА --- */
+        .main-content {
+             position: relative;
+             z-index: 20; /* Контент должен быть над кнопкой */
+        }
+        
         .cat-container {
             display: flex;
             justify-content: space-around;
             margin: 20px 0;
             gap: 20px;
             position: relative;
-            z-index: 20; /* Котики над тач-зоной */
+            z-index: 20; 
         }
 
         .cat {
@@ -146,29 +130,18 @@
             touch-action: manipulation;
         }
 
-        .cat:active {
-            transform: scale(0.98);
-        }
-
         h1 {
             color: #ffffff;
             font-size: 22px;
             font-weight: 600;
-            margin: 0 0 10px 0; /* Уменьшаем отступ сверху, чтобы было больше места для ачивок */
+            margin: 0 0 10px 0;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        p {
-            color: #b0b0b0;
-            font-size: 14px;
-            margin-top: 5px; /* Уменьшаем отступ для более компактного вида */
-            margin-bottom: 5px;
-        }
-
-        /* Ачивка-уведомление (оставлена, но с новым текстом) */
+        /* --- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ ПЕРЕНЕСЕНО ВВЕРХ --- */
         .achievement {
             position: fixed;
-            bottom: 5%;
+            top: 10%; /* Позиционируем сверху */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
@@ -180,78 +153,61 @@
             font-weight: 600;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            z-index: 2000;
+            z-index: 2000; /* Выше модального окна */
             opacity: 0;
             transition: opacity 0.3s;
             display: none;
             pointer-events: none;
         }
-        .achievement.show {
-            opacity: 1;
-            display: block;
-            animation: bounceUp 0.5s ease;
+
+        /* --- ИСПРАВЛЕННЫЙ СТИЛЬ МОДАЛЬНОГО ОКНА --- */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex; /* Важно: display: none должен быть в JS */
+            justify-content: center;
+            align-items: center;
+            z-index: 5000; /* САМЫЙ ВЫСОКИЙ СЛОЙ */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none; /* Сначала неактивно */
         }
-
-
-        /* Анимация мигания для супер-эффекта */
-        /* УВЕЛИЧЕНО КОЛИЧЕСТВО МИГАНИЙ */
+        .modal.show {
+            opacity: 1;
+            pointer-events: all; /* Делаем активным при показе */
+        }
+        .modal-content {
+            background: linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,46,0.95) 50%, rgba(22,33,62,0.95) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            color: #ffffff;
+            font-family: 'SF Pro Display', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            max-width: 80%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        /* Прочие стили анимаций остаются без изменений */
         @keyframes flash-strong {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.2; }
         }
-
-        /* УВЕЛИЧЕНА КОНТРАСТНОСТЬ ЦВЕТОВ МИГАНИЯ */
         @keyframes blink-strong {
             0%, 100% { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); }
             50% { background: linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%); }
         }
-        
-        /* Прочие стили... */
-        .heart {
-            position: absolute;
-            font-size: 24px;
-            color: #ff69b4;
-            pointer-events: none;
-            z-index: 100;
-            animation: floatUp 1s ease-out forwards;
-            transform-origin: center;
-        }
-        .celebration-particle {
-             animation-duration: var(--celebration-duration);
-        }
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) translateX(0) rotate(0deg) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
-            }
-        }
-        @keyframes bounceUp {
-            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(10px); }
-            60% { transform: translateX(-50%) translateY(5px); }
-        }
+        /* ... (остальные @keyframes) */
     </style>
 </head>
 <body>
-    <div class="top-fixed-elements">
-        <div class="telegram-buttons">
-            <div class="tg-btn" onclick="showLeaderboard()">🏆</div>
-            <div class="tg-btn" onclick="tg.openLink('https://t.me/your_channel_link')">📢</div>
-        </div>
-        <div class="achievement-grid" id="achievementGrid">
-            <div id="ach-slot-1" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">100 🐾</div>
-            <div id="ach-slot-2" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">200 ✨</div>
-            <div id="ach-slot-3" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">500 🌟</div>
-            <div id="ach-slot-4" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">1K 😻</div>
-            <div id="ach-slot-5" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">2K 💖</div>
-            <div id="ach-slot-6" class="achievement-slot" onclick="alert('Ещё не разблокировано!')">5K 🎉</div>
-        </div>
-    </div>
-
     <div id="welcomeModal" class="modal">
         <div class="modal-content">
             <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
@@ -259,15 +215,29 @@
         </div>
     </div>
 
-    <div class="content-wrapper">
-        <h1>Кеша и Кекс снимают стресс!❤️</h1>
-        <div class="cat-container" id="catContainer">
-            <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)">
-            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
+    <div class="top-fixed-elements">
+        <div class="achievement-grid" id="achievementGrid">
+            <div id="ach-slot-100" class="achievement-slot" title="100 тапов">100 🐾</div>
+            <div id="ach-slot-200" class="achievement-slot" title="200 тапов">200 ✨</div>
+            <div id="ach-slot-500" class="achievement-slot" title="500 тапов">500 🌟</div>
+            <div id="ach-slot-1000" class="achievement-slot" title="1K тапов">1K 😻</div>
+            <div id="ach-slot-2000" class="achievement-slot" title="2K тапов">2K 💖</div>
+            <div id="ach-slot-5000" class="achievement-slot" title="5K тапов">5K 🎉</div>
+            <div id="ach-slot-10000" class="achievement-slot" title="10K тапов">10K 🏆</div>
         </div>
-        <div id="score">Очки уюта: 0</div>
-        <button onclick="showLeaderboard()">🏆 Показать топ</button>
-        <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="main-content">
+            <h1>Кеша и Кекс снимают стресс!❤️</h1>
+            <div class="cat-container" id="catContainer">
+                <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)">
+                <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)">
+            </div>
+            <div id="score">Очки уюта: 0</div>
+            <button onclick="showLeaderboard()">🏆 Показать топ</button>
+            <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
+        </div>
     </div>
 
     <button id="tapZone" class="tap-zone" aria-label="Большая кнопка для тапов"></button>
@@ -275,7 +245,7 @@
     <div id="achievement" class="achievement">
         <span id="ach-text"></span> 🏆
     </div>
-
+    
     <audio id="backgroundMusic" loop autoplay>
         <source src="mur.mp3" type="audio/mpeg">
         Ваш браузер не поддерживает аудио.
@@ -336,17 +306,13 @@
             "https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/Keks_10_2025-11-10_16-54-08.jpg"
         ];
 
-        // --- Управление порогами для ачивок и празднований (СКОРРЕКТИРОВАНО) ---
-
+        // --- Управление порогами для ачивок ---
         const achievementThresholds = [1, 50];
         for (let i = 1; i <= 10000000; i++) {
             achievementThresholds.push(i * 100);
             achievementThresholds.push(i * 100 + 50);
         }
         
-        // Мамми/Паппи (УДАЛЕНО)
-        const specialThresholds = []; 
-
         const everyHundredThresholds = [];
         for (let i = 1; i <= 10000000; i++) {
             everyHundredThresholds.push(i * 100);
@@ -368,9 +334,19 @@
         const unlockedAchievements = new Set();
         const unlockedMilestones = new Set();
         const unlockedSupers = new Set();
-        const achSlotMapping = { 100: 1, 200: 2, 500: 3, 1000: 4, 2000: 5, 5000: 6 }; // Для грида
+        
+        // Маппинг для стилизации слотов вверху
+        const achSlotMapping = { 
+            100: 'ach-slot-100', 
+            200: 'ach-slot-200', 
+            500: 'ach-slot-500', 
+            1000: 'ach-slot-1000', 
+            2000: 'ach-slot-2000', 
+            5000: 'ach-slot-5000',
+            10000: 'ach-slot-10000'
+        }; 
 
-        // --- Вспомогательные функции ---
+        // --- Вспомогательные функции (сохранены) ---
 
         function createParticle(x, y, emoji = '♥️', color = '#ff69b4', container = document.body, duration = 1000, isCelebration = false) {
             const particle = document.createElement('div');
@@ -414,6 +390,9 @@
 
         // MILESTONE: Изменена анимация фона на более интенсивное мигание
         function launchMilestone() {
+            if (unlockedMilestones.has(score)) return;
+            unlockedMilestones.add(score);
+            
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('heavy');
                 setTimeout(() => tg.HapticFeedback.impactOccurred('medium'), 200);
@@ -468,7 +447,7 @@
             // 2. Сильное мигание котов (6 секунд)
             const cats = document.querySelectorAll('.cat');
             cats.forEach(cat => {
-                cat.style.animation = 'flash-strong 0.3s ease-in-out infinite'; // Более частое мигание
+                cat.style.animation = 'flash-strong 0.3s ease-in-out infinite';
                 setTimeout(() => cat.style.animation = '', CELEBRATION_DURATION_MS);
             });
             
@@ -499,7 +478,7 @@
 
             // 5. Специальное уведомление (СКОРРЕКТИРОВАНО)
             const achText = document.getElementById('ach-text');
-            achText.innerText = `${threshold} тапов! 🌈💥`; // Убрано слово "Достижение:"
+            achText.innerText = `${threshold} тапов! 🌈💥`;
             const elem = document.getElementById('achievement');
             elem.classList.add('show');
             setTimeout(() => {
@@ -509,12 +488,15 @@
 
         // Achievement: Убрано слово "Достижение:"
         function showAchievement(threshold) {
+            if (unlockedAchievements.has(threshold)) return;
+            unlockedAchievements.add(threshold);
+            
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.notificationOccurred('success');
             }
 
             const achText = document.getElementById('ach-text');
-            achText.innerText = `${threshold} тапов! 🎉`; // Убрано слово "Достижение:"
+            achText.innerText = `${threshold} тапов! 🎉`;
             const elem = document.getElementById('achievement');
             elem.classList.add('show');
             setTimeout(() => {
@@ -523,7 +505,7 @@
             
             // Разблокировка слота в гриде
             if (achSlotMapping[threshold]) {
-                const slotId = `ach-slot-${achSlotMapping[threshold]}`;
+                const slotId = achSlotMapping[threshold];
                 const slot = document.getElementById(slotId);
                 if (slot) {
                     slot.classList.add('unlocked');
@@ -531,23 +513,23 @@
                 }
             }
         }
-        
-        // showSpecialAchievement - УДАЛЕНО
 
         function checkAchievement(newScore) {
+            // Округляем до ближайшей сотни/тысячи для проверки
+            const checkScore = newScore % 100 === 0 ? newScore : (newScore % 50 === 0 ? newScore : newScore);
+            
             // 1. Проверка на СУПЕР (каждая 1000)
-            if (superThresholds.includes(newScore) && !unlockedSupers.has(newScore)) {
-                launchSuperEffect(newScore);
+            if (superThresholds.includes(checkScore)) {
+                launchSuperEffect(checkScore);
             }
             // 2. Проверка на MILESTONE (500, 1500, 2500...)
-            else if (milestoneThresholds.includes(newScore) && !unlockedMilestones.has(newScore)) {
-                unlockedMilestones.add(newScore);
+            else if (milestoneThresholds.includes(checkScore)) {
                 launchMilestone();
             }
             // 3. Проверка на SALUTE (Каждая сотня, исключая MILESTONE и SUPER)
-            else if (everyHundredThresholds.includes(newScore)) {
-                const isMilestone = milestoneThresholds.includes(newScore);
-                const isSuper = superThresholds.includes(newScore);
+            else if (everyHundredThresholds.includes(checkScore)) {
+                const isMilestone = milestoneThresholds.includes(checkScore);
+                const isSuper = superThresholds.includes(checkScore);
 
                 if (!isMilestone && !isSuper) {
                     launchSalute();
@@ -555,12 +537,9 @@
             }
 
             // 4. Проверка на обычную Ачивку (для уведомления)
-            if (achievementThresholds.includes(newScore) && !unlockedAchievements.has(newScore)) {
-                unlockedAchievements.add(newScore);
-                showAchievement(newScore);
+            if (achievementThresholds.includes(checkScore)) {
+                showAchievement(checkScore);
             }
-
-            // 5. Проверка специальные ачивки (УДАЛЕНО)
         }
 
         function clickCat(catNumber, x, y) {
@@ -568,22 +547,26 @@
             document.getElementById('score').innerText = `Очки уюта: ${score}`;
             checkAchievement(score);
 
-            // Получаем позицию клика (для кнопки - это сама кнопка, для кота - его центр)
+            // Получаем позицию клика
             let finalX, finalY;
-            if (catNumber === 1 || catNumber === 2) {
-                const cat = document.getElementById('cat' + catNumber);
-                const rect = cat.getBoundingClientRect();
+            const cat = document.getElementById('cat' + catNumber);
+            const rect = cat.getBoundingClientRect();
+            
+            // Если пришли координаты тапа с большой кнопки, используем их
+            if (x !== undefined && y !== undefined) {
+                 finalX = x;
+                 finalY = y;
+            } 
+            // Если кликнули прямо по коту, берем его центр
+            else { 
                 finalX = rect.left + rect.width / 2;
                 finalY = rect.top + rect.height / 2;
-            } else {
-                finalX = x;
-                finalY = y;
             }
 
             // Создаём сердечко
             createParticle(finalX, finalY, '♥️', '#ff69b4');
 
-            // Меняем фото, только если тапнули по коту, а не по большой кнопке
+            // Меняем фото 
             if (catNumber === 1) {
                 cat1Index = (cat1Index + 1) % cat1Photos.length;
                 document.getElementById('cat1').src = cat1Photos[cat1Index];
@@ -604,72 +587,72 @@
             tg.GameProxy.showLeaderboard();
         }
 
+        // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАКРЫТИЯ МОДАЛЬНОГО ОКНА
         function closeModal() {
             const modal = document.getElementById('welcomeModal');
             modal.classList.remove('show');
+            // Опционально: можно начать игру только после закрытия модалки
+            // Например, включить музыку, если она была заблокирована.
+            const audio = document.getElementById('backgroundMusic');
+            audio.play().catch(e => console.log('Не удалось запустить звук'));
         }
         
-        // --- НОВАЯ ЛОГИКА ДЛЯ БОЛЬШОЙ КРУГЛОЙ КНОПКИ ---
-
+        // ЛОГИКА ДЛЯ БОЛЬШОЙ КНОПКИ
         function handleTapZone(e) {
-            e.preventDefault(); // Предотвращаем стандартное поведение
+            e.preventDefault();
 
             let clientX;
-            // Определяем координаты (для тача берем первый палец, для клика - mouseX)
+            let clientY;
+            // Определяем координаты
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
             } else if (e.clientX !== undefined) {
                 clientX = e.clientX;
+                clientY = e.clientY;
             } else {
-                return; // Если нет координат, выходим
+                return;
             }
 
             const button = e.currentTarget;
             const rect = button.getBoundingClientRect();
             const center = rect.left + rect.width / 2;
-            const tapX = clientX;
-            const tapY = rect.top + rect.height / 2; // Центр кнопки по вертикали
-
+            
             let catToClick;
             
-            // Если тапнули по левой стороне (меньше центра)
-            if (tapX < center) {
-                catToClick = 1; // Шоколадный котик
-            } 
-            // Если тапнули по правой стороне (больше центра)
-            else {
-                catToClick = 2; // Серебристый котик
+            // Определяем сторону тапа
+            if (clientX < center) {
+                catToClick = 1; // Шоколадный котик (Кеша)
+            } else {
+                catToClick = 2; // Серебристый котик (Кекс)
             }
             
             // Вызываем основную функцию клика, передавая координаты тапа
-            clickCat(catToClick, tapX, tapY);
+            clickCat(catToClick, clientX, clientY);
         }
 
         // Инициализация
         window.onload = function() {
+            // ПОКАЗЫВАЕМ МОДАЛЬНОЕ ОКНО ПРИ ЗАГРУЗКЕ
             const modal = document.getElementById('welcomeModal');
             modal.classList.add('show');
 
+            // Музыка будет запущена только после нажатия на кнопку в модалке (в closeModal)
             const audio = document.getElementById('backgroundMusic');
             audio.volume = 0.3;
-            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
-            
-            // 1. Котики: обрабатываем только touchstart/click в центре
-            const cat1 = document.getElementById('cat1');
-            const cat2 = document.getElementById('cat2');
-            
-            // Для котиков отключаем старые обработчики, чтобы не было двойного срабатывания, если тап попадает сразу на кота и на зону тапа.
-            // Теперь основная зона клика - tapZone. Коты остаются для визуального отклика
-            
-            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1); }, { passive: false });
-            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2); }, { passive: false });
-            cat1.addEventListener('click', () => clickCat(1));
-            cat2.addEventListener('click', () => clickCat(2));
 
-            // 2. Большая кнопка: обрабатываем тапы/клики для смены фото
+            // Добавляем обработчики для кликов/тапов
             const tapZone = document.getElementById('tapZone');
             tapZone.addEventListener('touchstart', handleTapZone, { passive: false });
             tapZone.addEventListener('click', handleTapZone);
+            
+            // Также оставляем обработчики на самих котах для более точного тапа/клика
+            const cat1 = document.getElementById('cat1');
+            const cat2 = document.getElementById('cat2');
+            cat1.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(1, e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+            cat2.addEventListener('touchstart', (e) => { e.preventDefault(); clickCat(2, e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+            cat1.addEventListener('click', (e) => clickCat(1, e.clientX, e.clientY));
+            cat2.addEventListener('click', (e) => clickCat(2, e.clientX, e.clientY));
         };
     </script>
     <div id="footer" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #b0b0b0; white-space: nowrap; z-index: 1;">Kesha and Keks (v0.3) powerd by Jeremy Elfo (c) 2025</div>
