@@ -305,51 +305,65 @@
         /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
 
         .tap-zone {
-            /* Без адаптивности: фиксированные отступы и высота */
+            /* Фиксированная геометрия */
             display: block;
             position: fixed;
             left: 16px;
             right: 16px;
-            bottom: 64px; /* чтобы не наезжать на футер */
-            height: 280px; /* фиксированная высота */
+            bottom: 64px;
+            height: 280px;
 
-            /* iOS/Apple-like glass surface */
-            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 20px;
-            backdrop-filter: saturate(180%) blur(18px);
-            -webkit-backdrop-filter: saturate(180%) blur(18px);
+            /* Apple glass — лёгкий, воздушный */
+            background:
+                radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.03) 100%),
+                linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 24px;
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
 
             cursor: pointer;
             z-index: 10;
             margin: 0;
             padding: 0;
-            /* Эффект наклона/перспектива и объём */
+
             transform-style: preserve-3d;
-            transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -6px 12px rgba(0,0,0,0.28), 0 10px 24px rgba(0,0,0,0.25);
+            transition: transform 140ms ease, box-shadow 180ms ease, background 240ms ease;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.18);
         }
-        .tap-zone:active { 
-            transform: scale(0.985);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -8px 14px rgba(0,0,0,0.30), 0 8px 18px rgba(0,0,0,0.20);
+        .tap-zone:active {
+            transform: translateY(1px) scale(0.992);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.22);
         }
 
         /* Визуальная рамка для зоны тапа */
         .tap-zone::before {
+            /* Тонкая внутренняя кайма и верхний бликовый градиент */
             content: "";
             position: absolute;
-            inset: 10px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            /* имитация объёма: внутренняя каёмка и мягкая боковая подсветка */
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-                        inset 0 1px 0 rgba(255,255,255,0.10),
-                        inset 0 -8px 14px rgba(0,0,0,0.30);
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            inset: 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.06));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.28);
+            opacity: 0.95;
             pointer-events: none;
         }
-        .tap-zone.tap-tilt-left  { transform: perspective(800px) rotateY(6deg) translateZ(0); }
-        .tap-zone.tap-tilt-right { transform: perspective(800px) rotateY(-6deg) translateZ(0); }
+        .tap-zone::after {
+            /* Едва заметный «шимер» */
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.22) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.22) 55%, transparent 100%);
+            background-size: 220% 100%;
+            animation: shimmer 4s ease-in-out infinite;
+            mix-blend-mode: screen;
+            pointer-events: none;
+        }
+        .tap-zone.tap-tilt-left  { transform: perspective(800px) rotateY(3deg) translateZ(0); }
+        .tap-zone.tap-tilt-right { transform: perspective(800px) rotateY(-3deg) translateZ(0); }
 
 
 
@@ -560,9 +574,17 @@
         @keyframes bounceUp {
 
             0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-
             40% { transform: translateX(-50%) translateY(10px); }
+            60% { transform: translateX(-50%) translateY(5px); }
+        }
 
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; opacity: 0.0; }
+            10%  { opacity: 0.25; }
+            50%  { background-position: -20% 0; opacity: 0.35; }
+            90%  { opacity: 0.15; }
+            100% { background-position: -20% 0; opacity: 0.0; }
+        }
             60% { transform: translateX(-50%) translateY(5px); }
 
         }
@@ -665,7 +687,7 @@
 
         <button class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
 
-        <p class="subtitle-one">Котики мурлычут в унисон! Продолжай гладить котиков!</p>
+        <p class="subtitle-one">Гладь котиков!</p>
 
     </div>
 
@@ -683,12 +705,9 @@
 
 
 
-    <audio id="backgroundMusic" loop autoplay>
-
+    <audio id="backgroundMusic" loop preload="auto">
         <source src="mur.mp3" type="audio/mpeg">
-
         Ваш браузер не поддерживает аудио.
-
     </audio>
 
 
@@ -1520,6 +1539,9 @@
         function clickCat(catNumber, x, y) {
 
             if (inputLocked) return;
+            
+            // При первом тапе пробуем запустить звук
+            if (!audioInitialized) tryPlayAudio();
 
             score++;
             runScore++;
@@ -1630,19 +1652,15 @@
 
 
         function closeModal() {
-
             const modal = document.getElementById('welcomeModal');
-
             if (!modal) return;
-
             modal.classList.remove('show');
-
             modal.setAttribute('aria-hidden', 'true');
-
             document.body.classList.remove('has-modal');
-
             inputLocked = false;
-
+            
+            // Пробуем запустить звук после первого взаимодействия
+            tryPlayAudio();
         }
 
         function setFirstNameError(msg){ try{ document.getElementById('firstNameError').textContent = msg || ''; } catch(_){} }
@@ -1709,9 +1727,11 @@
                 // Закрываем модалку и входим
                 const m = document.getElementById('welcomeModalFirst');
                 if (m) { m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.classList.remove('has-modal'); }
-                inputLocked = false;
-                try { layoutTapZone(); } catch (_) {}
-            }catch(e){ setFirstNameError('Ошибка, попробуйте ещё раз'); console.warn('[saveFirstTimeName]', e); }
+            inputLocked = false;
+            
+            // Пробуем запустить звук после первого взаимодействия
+            tryPlayAudio();
+        }catch(e){ setFirstNameError('Ошибка, попробуйте ещё раз'); console.warn('[saveFirstTimeName]', e); }
         }
         // Локальное сохранение/восстановление прогресса (без адаптивности)
         async function loadServerProgress() {
@@ -1765,6 +1785,48 @@
                 if (v.endsWith('px')) return parseFloat(v);
                 const n = parseFloat(v); return isNaN(n) ? fallback : n;
             } catch (_) { return fallback; }
+        }
+
+        // Аудио менеджер с совместимостью Autoplay Policy
+        let audioContext = null;
+        let audioInitialized = false;
+        function tryPlayAudio() {
+            const audio = document.getElementById('backgroundMusic');
+            if (!audio || audioInitialized) return;
+            
+            audio.volume = 0.3;
+            audio.play()
+                .then(() => {
+                    audioInitialized = true;
+                    console.log('Звук успешно запущен');
+                })
+                .catch(err => {
+                    console.log('Звук заблокирован браузером:', err);
+                    // Попробуем Web Audio API как фолбэк
+                    tryWebAudioAPI();
+                });
+        }
+        
+        function tryWebAudioAPI() {
+            if (audioContext || audioInitialized) return;
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        console.log('Web Audio API активирован');
+                        // После активации Web Audio попробуем снова запустить аудио
+                        const audio = document.getElementById('backgroundMusic');
+                        if (audio) {
+                            audio.play().then(() => {
+                                audioInitialized = true;
+                                console.log('Звук запущен через Web Audio API');
+                            }).catch(() => console.log('Звук всё ещё заблокирован'));
+                        }
+                    });
+                }
+            } catch (err) {
+                console.log('Web Audio API недоступно:', err);
+            }
         }
 
         // Обновление счётов на сервере: max_score (лучший заход) + total_score (всё время)
@@ -1915,11 +1977,7 @@
 
 
 
-            const audio = document.getElementById('backgroundMusic');
-
-            audio.volume = 0.3;
-
-            audio.play().catch(e => console.log('Автозапуск звука заблокирован'));
+            // Больше не пытаемся запустить звук сразу — только после взаимодействия
 
             
 
