@@ -1905,7 +1905,9 @@
                 });
 
                 if (error) {
-                    debugLog(`ERROR Edge Function: ${JSON.stringify(error)}`);
+                    debugLog(`ERROR: ${error.message || error.name}`);
+                    debugLog(`Error details: ${JSON.stringify(error)}`);
+                    if (data) debugLog(`Response data: ${JSON.stringify(data)}`);
                 } else {
                     debugLog(`SUCCESS: ${JSON.stringify(data)}`);
                 }

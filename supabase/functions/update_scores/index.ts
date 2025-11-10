@@ -60,33 +60,39 @@ serve(async (req) => {
 
   try {
     const { initData, runScore, totalScore, displayName } = await req.json().catch(() => ({}))
+    console.log('[update_scores] Request received:', { hasInitData: !!initData, runScore, totalScore, displayName })
 
     if (!initData) {
+      console.error('[update_scores] Missing initData')
       return new Response(JSON.stringify({ error: "Missing initData" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!
-    const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN")!
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")
+    const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN")
 
-    if (!botToken) {
-      return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+    if (!supabaseUrl || !serviceRole || !botToken) {
+      console.error('[update_scores] Missing env:', { supabaseUrl: !!supabaseUrl, serviceRole: !!serviceRole, botToken: !!botToken })
+      return new Response(JSON.stringify({ error: "Server misconfigured", details: "Missing environment variables" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
 
     // Verify Telegram payload
+    console.log('[update_scores] Verifying Telegram initData...')
     const ok = await verifyTelegramInitData(initData, botToken)
     if (!ok) {
+      console.error('[update_scores] Telegram verification failed')
       return new Response(JSON.stringify({ error: "Invalid Telegram data" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
+    console.log('[update_scores] Telegram verification OK')
 
     // Extract user from initData
     const params = new URLSearchParams(initData)
@@ -129,18 +135,21 @@ serve(async (req) => {
     if (!cur && nameOk) record.username = name
     if (cur && nameOk) record.username = name
 
+    console.log('[update_scores] Upserting record:', record)
     const { error: upsertErr } = await admin
       .from("leaderboard")
       .upsert(record, { onConflict: "telegram_id" })
       .select()
 
     if (upsertErr) {
+      console.error('[update_scores] Upsert error:', upsertErr)
       return new Response(JSON.stringify({ error: upsertErr.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
 
+    console.log('[update_scores] Success!')
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
