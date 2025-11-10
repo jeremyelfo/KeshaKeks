@@ -620,85 +620,170 @@
         tg.expand();
 
         // Инициализация Supabase
+        // ВАЖНО: Убедитесь, что в Supabase настроены RLS политики:
+        // 1. Для чтения (SELECT): разрешить всем (anon) читать таблицу leaderboard
+        // 2. Для записи (INSERT/UPDATE): разрешить всем (anon) писать в таблицу leaderboard
+        // Или используйте сервисную роль для записи, если нужна дополнительная безопасность
         let supabaseClient = null;
         try {
             const supabaseUrl = 'https://aduxktmwnrilsbpydhye.supabase.co';
             const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkdXhrdG13bnJpbHNicHlkaHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3ODc2MzYsImV4cCI6MjA3ODM2MzYzNn0.MBj-HLDcqu2PHkbJp7ZfvWf2GsX_83-ZFny3YI5uRbU';
+            
+            console.log('[Supabase Init] Начало инициализации Supabase');
+            
             // Проверяем наличие Supabase SDK
             if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
                 supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                console.log('[Supabase Init] Supabase клиент успешно инициализирован');
+                
+                // Тестовый запрос для проверки подключения
+                supabaseClient.from('leaderboard').select('count', { count: 'exact', head: true })
+                    .then(({ count, error }) => {
+                        if (error) {
+                            console.warn('[Supabase Init] Тестовый запрос не удался (возможно, RLS блокирует):', error);
+                        } else {
+                            console.log('[Supabase Init] Тестовый запрос успешен, записей в таблице:', count);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('[Supabase Init] Ошибка тестового запроса:', err);
+                    });
             } else {
-                console.warn('Supabase SDK не загружен, лидерборд будет недоступен');
+                console.warn('[Supabase Init] Supabase SDK не загружен, лидерборд будет недоступен');
+                console.warn('[Supabase Init] Проверьте, что скрипт загружен');
             }
         } catch (error) {
-            console.error('Ошибка инициализации Supabase:', error);
+            console.error('[Supabase Init] Ошибка инициализации Supabase:', error);
+            console.error('[Supabase Init] Stack trace:', error.stack);
         }
 
         // Функции работы с Supabase
         async function updateScore(telegramId, username, newScore) {
             if (!supabaseClient) {
-                return; // Supabase не инициализирован
+                console.warn('[updateScore] Supabase клиент не инициализирован');
+                return;
             }
 
+            // Убеждаемся, что telegramId - число (Telegram возвращает число)
+            const userId = typeof telegramId === 'string' ? parseInt(telegramId, 10) : telegramId;
+            
+            console.log('[updateScore] Начало обновления:', { userId, username, newScore });
+
             try {
+                // Проверяем текущий максимальный счёт
                 const { data, error } = await supabaseClient
                     .from('leaderboard')
                     .select('max_score')
-                    .eq('telegram_id', telegramId)
+                    .eq('telegram_id', userId)
                     .single();
 
                 if (error && error.code !== 'PGRST116') {
-                    console.error('Ошибка при запросе max_score:', error);
-                    return;
+                    // PGRST116 - это "не найдено", это нормально для нового пользователя
+                    console.error('[updateScore] Ошибка при запросе max_score:', error);
+                    // Продолжаем выполнение, чтобы создать новую запись
                 }
 
                 const currentMax = data ? data.max_score : 0;
+                console.log('[updateScore] Текущий максимум:', currentMax, 'Новый счёт:', newScore);
 
+                // Обновляем только если новый счёт больше текущего максимума
                 if (newScore > currentMax) {
-                    const { error: upsertError } = await supabaseClient
+                    const recordData = {
+                        telegram_id: userId,
+                        username: username || 'Аноним',
+                        max_score: newScore,
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    console.log('[updateScore] Отправка данных для upsert:', recordData);
+                    
+                    // Используем upsert с возвратом данных
+                    const { data: upsertData, error: upsertError } = await supabaseClient
                         .from('leaderboard')
-                        .upsert({ telegram_id: telegramId, username: username, max_score: newScore, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' });
+                        .upsert(recordData, { onConflict: 'telegram_id' })
+                        .select();
 
                     if (upsertError) {
-                        console.error('Ошибка при обновлении счета:', upsertError);
+                        console.error('[updateScore] Ошибка при обновлении счета:', upsertError);
+                        console.error('[updateScore] Код ошибки:', upsertError.code);
+                        console.error('[updateScore] Сообщение:', upsertError.message);
+                        console.error('[updateScore] Детали ошибки:', JSON.stringify(upsertError, null, 2));
+                        
+                        // Попробуем альтернативный способ - сначала insert, потом update при ошибке
+                        if (upsertError.code === '42501' || upsertError.message?.includes('permission')) {
+                            console.warn('[updateScore] Похоже на проблему с RLS политиками. Проверьте настройки в Supabase.');
+                        }
+                    } else {
+                        console.log('[updateScore] Счёт успешно обновлён:', upsertData);
+                        if (upsertData && upsertData.length > 0) {
+                            console.log('[updateScore] Обновлённая запись:', upsertData[0]);
+                        }
                     }
+                } else {
+                    console.log('[updateScore] Новый счёт не превышает максимум, обновление не требуется');
                 }
             } catch (error) {
-                console.error('Ошибка в updateScore:', error);
+                console.error('[updateScore] Критическая ошибка:', error);
+                console.error('[updateScore] Stack trace:', error.stack);
             }
         }
 
         async function getLeaderboardTop() {
             if (!supabaseClient) {
-                console.warn('Supabase не инициализирован');
+                console.warn('[getLeaderboardTop] Supabase клиент не инициализирован');
                 return [];
             }
 
+            console.log('[getLeaderboardTop] Начало загрузки лидерборда');
+
             try {
-                const { data, error } = await supabaseClient
+                const { data, error, count } = await supabaseClient
                     .from('leaderboard')
-                    .select('username, max_score')
+                    .select('username, max_score, telegram_id', { count: 'exact' })
                     .order('max_score', { ascending: false })
                     .limit(10);
 
+                console.log('[getLeaderboardTop] Ответ от Supabase:', { 
+                    dataLength: data ? data.length : 0, 
+                    hasError: !!error,
+                    count: count 
+                });
+
                 if (error) {
-                    console.error('Ошибка при получении топа:', error);
+                    console.error('[getLeaderboardTop] Ошибка при получении топа:', error);
+                    console.error('[getLeaderboardTop] Детали ошибки:', JSON.stringify(error, null, 2));
                     return [];
                 }
-                return data || [];
+
+                if (!data) {
+                    console.warn('[getLeaderboardTop] Данные не получены (data = null)');
+                    return [];
+                }
+
+                if (data.length === 0) {
+                    console.log('[getLeaderboardTop] Лидерборд пуст');
+                } else {
+                    console.log('[getLeaderboardTop] Получено записей:', data.length);
+                    console.log('[getLeaderboardTop] Первые записи:', data.slice(0, 3));
+                }
+
+                return data;
             } catch (error) {
-                console.error('Ошибка в getLeaderboardTop:', error);
+                console.error('[getLeaderboardTop] Критическая ошибка:', error);
+                console.error('[getLeaderboardTop] Stack trace:', error.stack);
                 return [];
             }
         }
 
         async function showLeaderboard() {
+            console.log('[showLeaderboard] Открытие лидерборда');
+            
             try {
                 const leaderboardModal = document.getElementById('leaderboardModal');
                 const leaderboardList = document.getElementById('leaderboardList');
                 
                 if (!leaderboardModal || !leaderboardList) {
-                    console.error('Элементы модального окна не найдены');
+                    console.error('[showLeaderboard] Элементы модального окна не найдены');
                     return;
                 }
 
@@ -708,29 +793,98 @@
                 leaderboardModal.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('has-modal');
 
+                console.log('[showLeaderboard] Запрос данных лидерборда...');
                 const leaderboardData = await getLeaderboardTop();
+                console.log('[showLeaderboard] Получено данных:', leaderboardData.length);
+                
                 leaderboardList.innerHTML = '';
 
-                if (leaderboardData.length === 0) {
+                if (!leaderboardData || leaderboardData.length === 0) {
+                    console.log('[showLeaderboard] Нет данных для отображения');
                     const li = document.createElement('li');
                     li.textContent = 'Пока нет рекордов';
                     li.style.color = '#b0b0b0';
+                    li.style.textAlign = 'center';
+                    li.style.padding = '20px 0';
                     leaderboardList.appendChild(li);
                 } else {
-                    leaderboardData.forEach(({ username, max_score }, index) => {
+                    console.log('[showLeaderboard] Отображение', leaderboardData.length, 'записей');
+                    leaderboardData.forEach((item, index) => {
+                        const { username, max_score } = item;
                         const li = document.createElement('li');
                         li.textContent = `${index + 1}. ${username || 'Аноним'} - ${max_score} очков`;
                         leaderboardList.appendChild(li);
+                        console.log(`[showLeaderboard] Добавлена запись ${index + 1}:`, { username, max_score });
                     });
                 }
             } catch (error) {
-                console.error('Ошибка при показе лидерборда:', error);
+                console.error('[showLeaderboard] Ошибка при показе лидерборда:', error);
+                console.error('[showLeaderboard] Stack trace:', error.stack);
                 const leaderboardList = document.getElementById('leaderboardList');
                 if (leaderboardList) {
-                    leaderboardList.innerHTML = '<li style="color: #ff6b6b;">Ошибка загрузки данных</li>';
+                    leaderboardList.innerHTML = '<li style="color: #ff6b6b; text-align: center; padding: 20px 0;">Ошибка загрузки данных</li>';
                 }
             }
         }
+
+        // Тестовая функция для проверки лидерборда (можно вызвать из консоли)
+        // Использование: testLeaderboard()
+        window.testLeaderboard = async function() {
+            console.log('[testLeaderboard] Начало теста лидерборда');
+            
+            if (!supabaseClient) {
+                console.error('[testLeaderboard] Supabase клиент не инициализирован');
+                return;
+            }
+
+            // Тест 1: Создание тестовой записи
+            console.log('[testLeaderboard] Тест 1: Создание тестовой записи');
+            try {
+                const testData = {
+                    telegram_id: 999999999,
+                    username: 'Тестовый игрок',
+                    max_score: 1000,
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data: insertData, error: insertError } = await supabaseClient
+                    .from('leaderboard')
+                    .upsert(testData, { onConflict: 'telegram_id' })
+                    .select();
+                
+                if (insertError) {
+                    console.error('[testLeaderboard] Ошибка при создании тестовой записи:', insertError);
+                } else {
+                    console.log('[testLeaderboard] Тестовая запись создана:', insertData);
+                }
+            } catch (error) {
+                console.error('[testLeaderboard] Ошибка в тесте 1:', error);
+            }
+
+            // Тест 2: Чтение всех записей
+            console.log('[testLeaderboard] Тест 2: Чтение всех записей');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('leaderboard')
+                    .select('*')
+                    .order('max_score', { ascending: false })
+                    .limit(10);
+                
+                if (error) {
+                    console.error('[testLeaderboard] Ошибка при чтении:', error);
+                } else {
+                    console.log('[testLeaderboard] Получено записей:', data ? data.length : 0);
+                    console.log('[testLeaderboard] Данные:', data);
+                }
+            } catch (error) {
+                console.error('[testLeaderboard] Ошибка в тесте 2:', error);
+            }
+
+            // Тест 3: Вызов функции getLeaderboardTop
+            console.log('[testLeaderboard] Тест 3: Вызов getLeaderboardTop()');
+            const leaderboardData = await getLeaderboardTop();
+            console.log('[testLeaderboard] Результат getLeaderboardTop:', leaderboardData);
+        };
 
         let score = 0;
 
@@ -1310,10 +1464,22 @@
             // Обновляем счёт в Supabase асинхронно (неблокирующий вызов)
             const user = tg.initDataUnsafe?.user;
             if (user && supabaseClient) {
+                console.log('[clickCat] Обновление счёта в Supabase:', { 
+                    userId: user.id, 
+                    username: user.username, 
+                    score: score 
+                });
                 // Вызываем без await, чтобы не блокировать UI
                 updateScore(user.id, user.username || 'anon', score).catch(err => {
-                    console.error('Ошибка при сохранении счета:', err);
+                    console.error('[clickCat] Ошибка при сохранении счета:', err);
                 });
+            } else {
+                if (!user) {
+                    console.warn('[clickCat] Пользователь Telegram не найден');
+                }
+                if (!supabaseClient) {
+                    console.warn('[clickCat] Supabase клиент не инициализирован');
+                }
             }
 
 
