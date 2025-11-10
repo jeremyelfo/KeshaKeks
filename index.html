@@ -573,16 +573,22 @@
 
 
 
-    <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
-
+    <div id="welcomeModalFirst" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="modal-content">
-
             <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
-
-            <button class="primary-btn primary-btn--full" onclick="closeModal()">Начать терапию!</button>
-
+            <p>Давай вкусни, представься и входи.</p>
+            <input id="firstNameInput" type="text" maxlength="15" placeholder="Никнейм (4–15 символов)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;outline:none;">
+            <div id="firstNameError" style="color:#ff6b6b;font-size:12px;margin-top:6px;min-height:16px;"></div>
+            <div style="height:8px"></div>
+            <button class="primary-btn primary-btn--full" onclick="saveFirstTimeName()">Сохранить и войти</button>
         </div>
+    </div>
 
+    <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-content">
+            <p>Привет, Никчёмни, вкусни принёсб?! 😻</p>
+            <button class="primary-btn primary-btn--full" onclick="closeModal()">Начать терапию!</button>
+        </div>
     </div>
 
 
@@ -629,7 +635,6 @@
         <div id="score">Очки уюта: 0</div>
 
         <button class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
-        <button class="primary-btn" onclick="openNameModal()">📝 Имя</button>
 
         <p>Котики мурлычут в унисон! Продолжай гладить котиков! 😻</p>
 
@@ -1736,6 +1741,87 @@
 
         
 
+        // Регистрация при первом входе
+        function setFirstNameError(msg){ try{ document.getElementById('firstNameError').textContent = msg || ''; } catch(_){} }
+        function isValidName(name){
+            const n = (name||'').trim();
+            // Разрешаем латиницу/кириллицу, цифры, _ и - ; длина 4–15
+            return /^[A-Za-zА-Яа-яЁё0-9_-]{4,15}$/.test(n);
+        }
+        async function isNameTakenCI(name){
+            try{
+                const { data, error } = await supabaseClient
+                  .from('leaderboard')
+                  .select('username, telegram_id')
+                  .ilike('username', name);
+                if (error) { console.warn('[isNameTakenCI] error', error); return false; }
+                const lower = name.toLocaleLowerCase();
+                const rows = Array.isArray(data) ? data : [];
+                return rows.some(r => (r.username||'').toLocaleLowerCase() === lower && r.telegram_id !== (tg.initDataUnsafe?.user?.id));
+            }catch(e){ console.warn('[isNameTakenCI] catch', e); return false; }
+        }
+        function openFirstModal(){
+            const m = document.getElementById('welcomeModalFirst');
+            if (!m) return;
+            m.classList.add('show');
+            m.setAttribute('aria-hidden','false');
+            document.body.classList.add('has-modal');
+            const i = document.getElementById('firstNameInput');
+            if (i) i.focus();
+        }
+        async function saveFirstTimeName(){
+            try{
+                const input = document.getElementById('firstNameInput');
+                const val = (input?.value||'').trim();
+                if (!isValidName(val)) { setFirstNameError('Допустимы буквы/цифры/_/-, 4–15 символов'); return; }
+                setFirstNameError('');
+                const user = tg.initDataUnsafe?.user;
+                if (!user || !supabaseClient) { closeModal(); return; }
+                const userId = user.id;
+                // Попробуем атомарно через RPC reserve_username (если создана на бэке)
+                let reserved = false;
+                try{
+                    const { error: rpcErr } = await supabaseClient.rpc('reserve_username', {
+                        p_telegram_id: userId,
+                        p_username: val
+                    });
+                    if (!rpcErr) reserved = true; else console.warn('[reserve_username] error', rpcErr);
+                }catch(e){ /* ignore, пойдём fallback */ }
+                if (!reserved){
+                    // Fallback: проверим занятость на клиенте (неатомарно)
+                    if (await isNameTakenCI(val)) { setFirstNameError('Ник уже занят'); return; }
+                    // Создадим/обновим строку, сохраняя текущий max_score
+                    const { data: cur } = await supabaseClient
+                        .from('leaderboard')
+                        .select('max_score')
+                        .eq('telegram_id', userId)
+                        .maybeSingle();
+                    const currentMax = (cur && typeof cur.max_score === 'number') ? cur.max_score : 0;
+                    await supabaseClient
+                        .from('leaderboard')
+                        .upsert({ telegram_id: userId, username: val, max_score: currentMax, updated_at: new Date().toISOString() }, { onConflict: 'telegram_id' })
+                        .select();
+                }
+                setStoredDisplayName(val);
+                // Закрываем модалку и входим
+                const m = document.getElementById('welcomeModalFirst');
+                if (m) { m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.classList.remove('has-modal'); }
+            }catch(e){ setFirstNameError('Ошибка, попробуйте ещё раз'); console.warn('[saveFirstTimeName]', e); }
+        }
+        async function decideWelcomeModal(){
+            try{
+                const user = tg.initDataUnsafe?.user;
+                if (!user || !supabaseClient) { openModal(); return; }
+                const { data, error } = await supabaseClient
+                    .from('leaderboard')
+                    .select('username')
+                    .eq('telegram_id', user.id)
+                    .maybeSingle();
+                const hasName = !!(data && (data.username||'').trim());
+                if (!hasName && !(getStoredDisplayName()||'').trim()) openFirstModal(); else openModal();
+            }catch(e){ openModal(); }
+        }
+
         // --- НОВАЯ ЛОГИКА ДЛЯ БОЛЬШОЙ КРУГЛОЙ КНОПКИ ---
 
 
@@ -1827,7 +1913,7 @@
         window.onload = function() {
             // Небольшая задержка для гарантии полной загрузки DOM
             setTimeout(() => {
-                openModal();
+                decideWelcomeModal();
             }, 100);
 
 
