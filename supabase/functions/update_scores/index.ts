@@ -90,19 +90,17 @@ serve(async (req) => {
       })
     }
 
-    // Verify Telegram payload
+    // Full cryptographic verification
     console.log('[update_scores] Verifying Telegram initData...')
     const ok = await verifyTelegramInitData(initData, botToken)
     if (!ok) {
-      console.warn('[update_scores] Telegram verification failed - SKIPPING for now')
-      // TODO: Fix verification later
-      // return new Response(JSON.stringify({ error: "Invalid Telegram data" }), {
-      //   status: 401,
-      //   headers: { ...corsHeaders, "Content-Type": "application/json" },
-      // })
-    } else {
-      console.log('[update_scores] Telegram verification OK')
+      console.error('[update_scores] Telegram verification FAILED')
+      return new Response(JSON.stringify({ error: "Invalid Telegram signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
     }
+    console.log('[update_scores] Telegram verification OK')
 
     // Extract user from initData
     const params = new URLSearchParams(initData)
