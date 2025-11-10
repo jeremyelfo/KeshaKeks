@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -16,6 +17,7 @@
             margin: 0;
             min-height: 100vh;
             position: relative;
+            overflow: hidden; /* Чтобы сердечки не выходили за экран */
         }
         /* Учёт Telegram хедера: отступ сверху для кнопок в углах */
         .content-wrapper {
@@ -27,6 +29,7 @@
             justify-content: space-around; 
             margin: 20px 0; 
             gap: 20px;
+            position: relative; /* Для позиционирования сердечек относительно контейнера */
         }
         .cat { 
             width: 150px; 
@@ -127,14 +130,34 @@
             40% { transform: translateX(-50%) translateY(-10px); }
             60% { transform: translateX(-50%) translateY(-5px); }
         }
+        /* Анимация сердечек: летают вверх от котов */
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            color: #ff69b4; /* Розовый для сердечек */
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 1s ease-out forwards;
+            transform-origin: center;
+        }
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) translateX(var(--rand-x, 0px)) rotate(360deg) scale(0.5);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="content-wrapper">
         <h1>Кеша и Кекс снимают стресс!❤️</h1>
-        <div class="cat-container">
+        <div class="cat-container" id="catContainer">
             <img id="cat1" class="cat cat1" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2550.jpeg" alt="Кеша (шоколадный котик)" onclick="clickCat(1)">
-            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2551.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
+            <img id="cat2" class="cat cat2" src="https://raw.githubusercontent.com/jeremyelfo/KeshaKeks/refs/heads/main/IMG_2558.jpeg" alt="Кекс (серебристый котик)" onclick="clickCat(2)">
         </div>
         <div id="score">Очки: 0</div>
         <button onclick="showLeaderboard()">🏆 Показать топ</button>
@@ -179,6 +202,25 @@
         ];
         const unlockedAchievements = new Set(); // Чтобы не повторять уведомления
 
+        function createHeart(x, y) {
+            const heart = document.createElement('div');
+            heart.innerHTML = '♥️';
+            heart.className = 'heart';
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+            // Случайный сдвиг по X для разнообразия (-20 to +20 px)
+            const randX = (Math.random() - 0.5) * 40;
+            heart.style.setProperty('--rand-x', randX + 'px');
+            // Случайный размер для милоты
+            const randSize = 0.8 + Math.random() * 0.4;
+            heart.style.fontSize = (24 * randSize) + 'px';
+            document.getElementById('catContainer').appendChild(heart);
+            // Удаляем после анимации
+            setTimeout(() => {
+                heart.remove();
+            }, 1000);
+        }
+
         function showAchievement(threshold) {
             const achText = document.getElementById('ach-text');
             achText.innerText = `Ачивка разблокирована: ${threshold} тапов! 🎉`;
@@ -201,6 +243,16 @@
             score++;
             document.getElementById('score').innerText = `Очки: ${score}`;
             checkAchievement(score); // Проверяем ачивку
+
+            // Получаем позицию клика (центр кота)
+            const cat = document.getElementById('cat' + catNumber);
+            const rect = cat.getBoundingClientRect();
+            const containerRect = document.getElementById('catContainer').getBoundingClientRect();
+            const x = rect.left - containerRect.left + rect.width / 2;
+            const y = rect.top - containerRect.top + rect.height / 2;
+
+            // Создаём сердечко
+            createHeart(x, y);
 
             // Меняем фото выбранного кота
             if (catNumber === 1) {
@@ -233,4 +285,4 @@
     </script>
 </body>
 </html>
-```​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
+```
