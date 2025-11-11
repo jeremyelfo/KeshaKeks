@@ -313,8 +313,8 @@
         .content-wrapper {
             /* Опускаем контент ниже заголовка и нового блока ачивок (2 ряда) */
             padding-top: calc(env(safe-area-inset-top, 20px) + 200px);
-            /* Отступ снизу = высота зоны тапа + нижний отступ + запас */
-            padding-bottom: calc(var(--tap-height) + var(--tap-bottom) + 40px);
+            /* Отступ снизу = высота зоны тапа + нижний отступ + безопасная зона + запас */
+            padding-bottom: calc(var(--tap-height) + var(--tap-bottom) + env(safe-area-inset-bottom, 0px) + 40px);
             max-width: 90%;
             margin: 0 auto;
         }
@@ -329,7 +329,7 @@
             position: fixed;
             left: 16px;
             right: 16px;
-            bottom: var(--tap-bottom);
+            bottom: calc(var(--tap-bottom) + env(safe-area-inset-bottom, 0px));
             height: var(--tap-height);
 
             /* Apple glass — лёгкий, с оттенком цвета приложения */
@@ -1959,7 +1959,7 @@
         }
         function adjustTapZoneLayout() {
             try {
-                const gap = 16; // зазор между контентом и тач-зоной
+                const gap = 20; // зазор между контентом и тач-зоной
                 const scoreEl = document.getElementById('score');
                 const btnEl = document.getElementById('showLeaderboardBtn');
                 const subEl = document.querySelector('.subtitle-one');
@@ -1979,7 +1979,8 @@
             } catch(_){}
         }
         window.addEventListener('resize', () => { adjustTapZoneLayout(); });
-        window.addEventListener('orientationchange', () => { setTimeout(adjustTapZoneLayout, 100); });
+        window.addEventListener('orientationchange', () => { setTimeout(adjustTapZoneLayout, 120); });
+        document.addEventListener('DOMContentLoaded', () => { setTimeout(adjustTapZoneLayout, 0); setTimeout(adjustTapZoneLayout, 300); setTimeout(adjustTapZoneLayout, 800); });
 
         // Аудио менеджер с совместимостью Autoplay Policy
         let audioContext = null;
@@ -2168,6 +2169,8 @@
             // Небольшая задержка для гарантии полной загрузки DOM
             // decideWelcomeModal уже вызывается на DOMContentLoaded выше
             setTimeout(adjustTapZoneLayout, 0);
+            setTimeout(adjustTapZoneLayout, 300);
+            setTimeout(adjustTapZoneLayout, 800);
 
 
 
