@@ -169,10 +169,10 @@ serve(async (req) => {
     if (cur && nameOk) record.username = name
 
     console.log('[update_scores] Upserting record:', record)
-    const { error: upsertErr } = await admin
+    const { data: upsertData, error: upsertErr } = await admin
       .from("leaderboard")
       .upsert(record, { onConflict: "telegram_id" })
-      .select()
+      .select("telegram_id, username, max_score, total_score, updated_at")
 
     if (upsertErr) {
       console.error('[update_scores] Upsert error:', upsertErr)
@@ -182,8 +182,22 @@ serve(async (req) => {
       })
     }
 
-    console.log('[update_scores] Success!')
-    return new Response(JSON.stringify({ ok: true }), {
+    // Ensure we return the freshest row for this user so the client can render immediately
+    let me: any = Array.isArray(upsertData)
+      ? upsertData.find((r: any) => r.telegram_id === telegramId)
+      : upsertData
+
+    if (!me) {
+      const { data: refetched } = await admin
+        .from("leaderboard")
+        .select("telegram_id, username, max_score, total_score, updated_at")
+        .eq("telegram_id", telegramId)
+        .maybeSingle()
+      me = refetched
+    }
+
+    console.log('[update_scores] Success! Returning fresh row for user:', { telegramId, hasMe: !!me })
+    return new Response(JSON.stringify({ ok: true, me }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
   } catch (e) {

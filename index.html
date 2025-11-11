@@ -61,17 +61,6 @@
             text-align: center;
         }
         
-        /* Анимация разворачивания свитка только для лидерборда */
-        #leaderboardModal .modal-content {
-            transform: scaleY(0.3);
-            opacity: 0;
-            transition: transform 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.6s ease;
-        }
-        
-        #leaderboardModal.show .modal-content {
-            transform: scaleY(1);
-            opacity: 1;
-        }
 
 
 
@@ -665,6 +654,9 @@
                 <button class="leaderboard-tab" id="tabRun" data-tab="run" role="tab" aria-selected="false">За один заход</button>
             </div>
 
+            <div id="catsWait" role="status" aria-live="polite" style="display:none;margin:8px 0 12px 0;padding:10px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.06);color:#e0e0e0;font-size:14px;">
+                Кеша лапками заполняет табличку, а Кекс помогает. Ждём-с.
+            </div>
             <ul id="leaderboardList"></ul>
 
             <div style="text-align:left;margin:10px 0 14px 0; display:flex; align-items:center; gap:10px;">
@@ -961,7 +953,7 @@
                     return;
                 }
                 
-                // Открываем модалку сразу (анимация разворачивания сработает)
+                // Открываем модалку
                 leaderboardModal.classList.add('show');
                 leaderboardModal.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('has-modal');
@@ -981,25 +973,9 @@
                         tabRun.classList.remove('is-active'); tabRun.setAttribute('aria-selected','false');
                     }
                 };
-                // Эффект побуквенной печати (как в Матрице)
-                const typeText = (element, text, speed = 16) => {
-                    return new Promise((resolve) => {
-                        let charIndex = 0;
-                        element.textContent = '';
-                        const interval = setInterval(() => {
-                            if (charIndex < text.length) {
-                                element.textContent += text[charIndex];
-                                charIndex++;
-                            } else {
-                                clearInterval(interval);
-                                resolve();
-                            }
-                        }, speed);
-                    });
-                };
                 
-                const render = async (data, mode) => {
-                    // Сразу очищаем таблицу - никаких затуханий
+                const render = (data, mode) => {
+                    // Сразу очищаем таблицу
                     leaderboardList.innerHTML = '';
                     
                     if (!data || data.length === 0) {
@@ -1012,31 +988,15 @@
                         return;
                     }
                     
-                    // Печатаем никнеймы поочередно (1е место, 2е, 3е...)
-                    const items = [];
                     for (let i = 0; i < data.length; i++) {
                         const item = data[i];
                         const li = document.createElement('li');
                         const username = item.username || 'Аноним';
-                        const prefix = `${i + 1}. `;
-                        
+                        const value = mode === 'run' ? item.max_score : item.total_score;
+                        const suffix = mode === 'run' ? 'очков за заход' : 'всего';
                         li.style.color = '#e0e0e0';
+                        li.textContent = `${i + 1}. ${username} — ${value} ${suffix}`;
                         leaderboardList.appendChild(li);
-                        items.push({ li, item });
-                        
-                        // Печатаем номер + никнейм побуквенно
-                        await typeText(li, prefix + username, 16);
-                    }
-                    
-                    // Теперь добавляем очки поочередно (1е место, 2е, 3е...)
-                    for (const { li, item } of items) {
-                        const score = mode === 'run' ? item.max_score : item.total_score;
-                        const scoreText = mode === 'run' 
-                            ? ` — ${score} очков за заход`
-                            : ` — ${score} всего`;
-                        
-                        const currentText = li.textContent;
-                        await typeText(li, currentText + scoreText, 16);
                     }
                 };
 
@@ -1047,19 +1007,40 @@
                 // Навешиваем обработчики вкладок (один раз на открытие)
                 tabRun.onclick = async () => {
                     setActive('run');
-                    const data = await getLeaderboardTopRun();
-                    render(data, 'run');
+                    const cats = document.getElementById('catsWait');
+                    let t = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
+                    try {
+                        const data = await getLeaderboardTopRun();
+                        render(data, 'run');
+                    } finally {
+                        clearTimeout(t);
+                        if (cats) cats.style.display = 'none';
+                    }
                 };
                 tabTotal.onclick = async () => {
                     setActive('total');
-                    const data = await getLeaderboardTopTotal();
-                    render(data, 'total');
+                    const cats = document.getElementById('catsWait');
+                    let t = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
+                    try {
+                        const data = await getLeaderboardTopTotal();
+                        render(data, 'total');
+                    } finally {
+                        clearTimeout(t);
+                        if (cats) cats.style.display = 'none';
+                    }
                 };
 
                 // По умолчанию показываем «За всё время»
                 setActive('total');
-                const data = await getLeaderboardTopTotal();
-                render(data, 'total');
+                const cats = document.getElementById('catsWait');
+                let t = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
+                try {
+                    const data = await getLeaderboardTopTotal();
+                    render(data, 'total');
+                } finally {
+                    clearTimeout(t);
+                    if (cats) cats.style.display = 'none';
+                }
             } catch (error) {
                 console.error('[showLeaderboard] Ошибка при показе лидерборда:', error);
                 const leaderboardList = document.getElementById('leaderboardList');
