@@ -630,8 +630,10 @@
         }
         /* Адаптив для узких экранов (iPhone 12 и схожие ширины) */
         @media (max-width: 400px) {
-            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 180px); }
-            :root { --ach-scale: 0.92; --cat-size: 130px; --tap-height: 230px; --tap-bottom: 44px; }
+            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 170px); }
+            :root { --ach-scale: 0.92; --cat-size: 130px; --tap-height: 180px; --tap-bottom: 36px; }
+            body { overflow: auto; }
+            .primary-btn { min-height: 40px; font-size: 14px; padding: 0 18px; }
         }
     </style>
 
@@ -1958,7 +1960,7 @@
         }
         function adjustTapZoneLayout() {
             try {
-                const gap = 20; // зазор между контентом и тач-зоной
+                const gap = 24; // зазор между контентом и тач-зоной
                 const scoreEl = document.getElementById('score');
                 const btnEl = document.getElementById('showLeaderboardBtn');
                 const subEl = document.querySelector('.subtitle-one');
@@ -1970,8 +1972,8 @@
                 const tapBottom = getCssVarPx('--tap-bottom', 48);
                 const desiredTapTop = bottomMost + gap;
                 const available = Math.max(120, viewportH - tapBottom - desiredTapTop);
-                const maxH = Math.min(280, Math.round(viewportH * 0.38));
-                const minH = 140; // минимальная высота, чтобы было удобно жать
+                const maxH = Math.min(260, Math.round(viewportH * 0.34));
+                const minH = 120; // минимальная высота, чтобы было удобно жать
                 const newH = Math.max(minH, Math.min(maxH, available));
                 setCssVar('--tap-height', newH + 'px');
                 // Обновим нижний паддинг контента (зависит от --tap-height через CSS)
