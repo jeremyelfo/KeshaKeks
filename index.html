@@ -618,9 +618,6 @@
             :root { --cat-size: 110px; }
             body { overflow: auto; }
         }
-        /* Кнопка лидерборда поверх зоны тапа */
-        #showLeaderboardBtn { position: relative; z-index: 30; }
-
         /* Адаптив для невысоких экранов */
         @media (max-height: 780px) {
             .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 170px); }
@@ -1957,6 +1954,32 @@
                 const n = parseFloat(v); return isNaN(n) ? fallback : n;
             } catch (_) { return fallback; }
         }
+        function setCssVar(name, value) {
+            try { document.documentElement.style.setProperty(name, value); } catch(_){}
+        }
+        function adjustTapZoneLayout() {
+            try {
+                const gap = 16; // зазор между контентом и тач-зоной
+                const scoreEl = document.getElementById('score');
+                const btnEl = document.getElementById('showLeaderboardBtn');
+                const subEl = document.querySelector('.subtitle-one');
+                const els = [scoreEl, btnEl, subEl].filter(Boolean);
+                if (els.length === 0) return;
+                const bottoms = els.map(el => el.getBoundingClientRect().bottom);
+                const bottomMost = Math.max.apply(null, bottoms);
+                const viewportH = window.innerHeight || document.documentElement.clientHeight;
+                const tapBottom = getCssVarPx('--tap-bottom', 48);
+                const desiredTapTop = bottomMost + gap;
+                const available = Math.max(120, viewportH - tapBottom - desiredTapTop);
+                const maxH = Math.min(280, Math.round(viewportH * 0.38));
+                const minH = 160; // минимальная высота, чтобы было удобно жать
+                const newH = Math.max(minH, Math.min(maxH, available));
+                setCssVar('--tap-height', newH + 'px');
+                // Обновим нижний паддинг контента (зависит от --tap-height через CSS)
+            } catch(_){}
+        }
+        window.addEventListener('resize', () => { adjustTapZoneLayout(); });
+        window.addEventListener('orientationchange', () => { setTimeout(adjustTapZoneLayout, 100); });
 
         // Аудио менеджер с совместимостью Autoplay Policy
         let audioContext = null;
@@ -2144,6 +2167,7 @@
         window.onload = function() {
             // Небольшая задержка для гарантии полной загрузки DOM
             // decideWelcomeModal уже вызывается на DOMContentLoaded выше
+            setTimeout(adjustTapZoneLayout, 0);
 
 
 
