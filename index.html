@@ -328,11 +328,11 @@
             /* Липкая зона тапа в потоке, чтобы не перекрывать контент */
             display: block;
             position: sticky;
-            bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tap-gap));
+            bottom: var(--tap-gap);
             height: var(--tap-height);
             width: 100%;
-            /* Симметричный зазор: учитываем safe-area и сверху тоже */
-            margin: calc(var(--tap-gap) + env(safe-area-inset-bottom, 0px)) 0 0 0;
+            /* Симметричный зазор сверху = снизу */
+            margin: var(--tap-gap) 0 0 0;
 
             /* Apple glass — лёгкий, с оттенком цвета приложения */
             background:
@@ -636,6 +636,10 @@
             :root { --ach-scale: 0.92; --cat-size: 130px; --tap-height: 180px; --tap-gap: 12px; }
             body { overflow: auto; }
             .primary-btn { min-height: 40px; font-size: 14px; padding: 0 18px; }
+        }
+        /* iPhone Plus/Max ширины (414px) — немного сокращаем высоту и зазор */
+        @media (min-width: 410px) and (max-width: 430px) {
+            :root { --tap-height: 190px; --tap-gap: 10px; }
         }
     </style>
 
@@ -1973,8 +1977,7 @@
                 const viewportH = window.innerHeight || document.documentElement.clientHeight;
                 const tapGap = getCssVarPx('--tap-gap', 12);
                 const desiredTapTop = bottomMost + gap;
-                const safeGuess = 24; // приблизительная нижняя safe area (iOS)
-                const available = Math.max(120, viewportH - (tapGap + safeGuess) - desiredTapTop);
+                const available = Math.max(120, viewportH - tapGap - desiredTapTop);
                 const maxH = Math.min(260, Math.round(viewportH * 0.34));
                 const minH = 120; // минимальная высота, чтобы было удобно жать
                 const newH = Math.max(minH, Math.min(maxH, available));
