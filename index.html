@@ -939,23 +939,11 @@
         async function showLeaderboard() {
             console.log('[showLeaderboard] Открытие лидерборда');
             
-            // Принудительно сохраняем счёт перед открытием
+            // Сохраняем параллельно (не ждём)
             const user = tg.initDataUnsafe?.user;
             if (user && supabaseClient && score > 0) {
-                debugLog('[showLeaderboard] Сохранение перед открытием...');
-                // Отменяем debounce
-                if (saveTimeout) {
-                    clearTimeout(saveTimeout);
-                    saveTimeout = null;
-                }
-                // Сохраняем и ждём завершения
-                try {
-                    await updateScores(user.id, user.username || 'anon', runScore, score);
-                    // Ждём ещё 50ms чтобы БД точно обновилась
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                } catch (e) {
-                    console.error('[showLeaderboard] Ошибка сохранения:', e);
-                }
+                if (saveTimeout) clearTimeout(saveTimeout);
+                updateScores(user.id, user.username || 'anon', runScore, score).catch(() => {});
             }
             
             try {
