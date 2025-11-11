@@ -194,6 +194,9 @@
             --cat-size: 150px;
             /* Масштаб панели ачивок */
             --ach-scale: 1;
+            /* Геометрия большой кнопки (зоны тапа) */
+            --tap-height: 280px;
+            --tap-bottom: 64px;
         }
 
 
@@ -310,8 +313,8 @@
         .content-wrapper {
             /* Опускаем контент ниже заголовка и нового блока ачивок (2 ряда) */
             padding-top: calc(env(safe-area-inset-top, 20px) + 200px);
-            /* Фиксированный отступ снизу без адаптивности */
-            padding-bottom: 160px;
+            /* Отступ снизу = высота зоны тапа + нижний отступ + запас */
+            padding-bottom: calc(var(--tap-height) + var(--tap-bottom) + 40px);
             max-width: 90%;
             margin: 0 auto;
         }
@@ -326,8 +329,8 @@
             position: fixed;
             left: 16px;
             right: 16px;
-            bottom: 64px;
-            height: 280px;
+            bottom: var(--tap-bottom);
+            height: var(--tap-height);
 
             /* Apple glass — лёгкий, с оттенком цвета приложения */
             background:
@@ -387,19 +390,12 @@
 
 
         .cat-container {
-
             display: flex;
-
             justify-content: space-around;
-
             margin: 20px 0;
-
             gap: 20px;
-
             position: relative;
-
             z-index: 20; /* Котики над тач-зоной */
-
         }
 
 
@@ -622,6 +618,24 @@
             :root { --cat-size: 110px; }
             body { overflow: auto; }
         }
+        /* Кнопка лидерборда поверх зоны тапа */
+        #showLeaderboardBtn { position: relative; z-index: 30; }
+
+        /* Адаптив для невысоких экранов */
+        @media (max-height: 780px) {
+            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 170px); }
+            :root { --ach-scale: 0.9; --cat-size: 130px; --tap-height: 240px; --tap-bottom: 48px; }
+        }
+        @media (max-height: 640px) {
+            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 12px) + 140px); }
+            :root { --ach-scale: 0.85; --cat-size: 110px; --tap-height: 200px; --tap-bottom: 40px; }
+            body { overflow: auto; }
+        }
+        /* Адаптив для узких экранов (iPhone 12 и схожие ширины) */
+        @media (max-width: 400px) {
+            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 180px); }
+            :root { --ach-scale: 0.92; --cat-size: 130px; --tap-height: 230px; --tap-bottom: 44px; }
+        }
     </style>
 
 </head>
@@ -719,7 +733,7 @@
 
         <div id="score">Очки уюта: 0</div>
 
-        <button class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
+        <button id="showLeaderboardBtn" class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
 
         <p class="subtitle-one">Котики мурлычут в унисон! Гладь котиков! 😻</p>
 
