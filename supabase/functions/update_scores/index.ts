@@ -104,8 +104,8 @@ serve(async (req) => {
     console.log('[update_scores] Verifying Telegram initData...')
     
     // 1. Check auth_date (must be within 24 hours)
-    const params = new URLSearchParams(initData)
-    const authDate = parseInt(params.get('auth_date') || '0', 10)
+    const urlParams = new URLSearchParams(initData)
+    const authDate = parseInt(urlParams.get('auth_date') || '0', 10)
     const now = Math.floor(Date.now() / 1000)
     const age = now - authDate
     
