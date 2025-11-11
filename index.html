@@ -973,8 +973,24 @@
                         tabRun.classList.remove('is-active'); tabRun.setAttribute('aria-selected','false');
                     }
                 };
-                
-                const render = (data, mode) => {
+
+                const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+                async function pollLeaderboard(fetchFn, ok, timeout = 1200, interval = 200) {
+                    const start = Date.now();
+                    let last = null;
+                    while (Date.now() - start < timeout) {
+                        try {
+                            const d = await fetchFn();
+                            last = d;
+                            if (ok(d)) return d;
+                        } catch (_) {}
+                        await sleep(interval);
+                    }
+                    return last || [];
+                }
+
+                const render = (data, mode, opts = {}) => {
+                    const { optimisticMyId = null, optimisticValue = null, syncing = false } = opts;
                     // Сразу очищаем таблицу
                     leaderboardList.innerHTML = '';
                     
@@ -992,10 +1008,13 @@
                         const item = data[i];
                         const li = document.createElement('li');
                         const username = item.username || 'Аноним';
-                        const value = mode === 'run' ? item.max_score : item.total_score;
+                        let value = mode === 'run' ? item.max_score : item.total_score;
                         const suffix = mode === 'run' ? 'очков за заход' : 'всего';
+                        if (optimisticMyId && item.telegram_id === optimisticMyId && typeof optimisticValue === 'number') {
+                            value = Math.max(value || 0, optimisticValue);
+                        }
                         li.style.color = '#e0e0e0';
-                        li.textContent = `${i + 1}. ${username} — ${value} ${suffix}`;
+                        li.textContent = `${i + 1}. ${username} — ${value} ${suffix}` + ((optimisticMyId && item.telegram_id === optimisticMyId && syncing) ? ' (синхронизируем…)': '');
                         leaderboardList.appendChild(li);
                     }
                 };
@@ -1005,42 +1024,62 @@
                 if (chk) { chk.checked = !!getLightMode(); chk.onchange = () => setLightMode(chk.checked); }
 
                 // Навешиваем обработчики вкладок (один раз на открытие)
-                tabRun.onclick = async () => {
-                    setActive('run');
+                async function loadAndRender(mode) {
                     const cats = document.getElementById('catsWait');
-                    let t = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
+                    let timer = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
+                    const myId = tg.initDataUnsafe?.user?.id;
+                    const expected = mode === 'run' ? runScore : score;
+                    const fetchFn = mode === 'run' ? getLeaderboardTopRun : getLeaderboardTopTotal;
+                    let rows = [];
                     try {
-                        const data = await getLeaderboardTopRun();
-                        render(data, 'run');
+                        // Быстрый запрос + небольшой догоняющий поллинг до 1.2с
+                        rows = await Promise.race([
+                            fetchFn(),
+                            pollLeaderboard(fetchFn, (t) => {
+                                if (!myId || !expected) return false;
+                                const me = (t || []).find(r => r.telegram_id === myId);
+                                const val = mode === 'run' ? me?.max_score : me?.total_score;
+                                return typeof val === 'number' && val >= expected;
+                            }, 1200, 200)
+                        ]);
+                    } catch(_) {
+                        rows = await fetchFn().catch(() => []);
                     } finally {
-                        clearTimeout(t);
+                        clearTimeout(timer);
                         if (cats) cats.style.display = 'none';
                     }
-                };
-                tabTotal.onclick = async () => {
-                    setActive('total');
-                    const cats = document.getElementById('catsWait');
-                    let t = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
-                    try {
-                        const data = await getLeaderboardTopTotal();
-                        render(data, 'total');
-                    } finally {
-                        clearTimeout(t);
-                        if (cats) cats.style.display = 'none';
+
+                    // Оптимистичный рендер своей строки, если сервер не догнал
+                    let serverVal = 0;
+                    if (myId) {
+                        const me = (rows || []).find(r => r.telegram_id === myId);
+                        serverVal = mode === 'run' ? (me?.max_score || 0) : (me?.total_score || 0);
                     }
-                };
+                    const syncing = !!(myId && expected > serverVal);
+                    render(rows, mode, { optimisticMyId: myId, optimisticValue: expected, syncing });
+
+                    // Фоновая синхронизация до 5с, затем перерисовка без бейджа
+                    if (syncing) {
+                        try {
+                            const synced = await pollLeaderboard(fetchFn, (t) => {
+                                const me = (t || []).find(r => r.telegram_id === myId);
+                                if (!me) return false;
+                                const val = mode === 'run' ? me.max_score : me.total_score;
+                                return typeof val === 'number' && val >= expected;
+                            }, 5000, 300);
+                            if (Array.isArray(synced) && synced.length) {
+                                render(synced, mode);
+                            }
+                        } catch(_) {}
+                    }
+                }
+
+                tabRun.onclick = async () => { setActive('run'); await loadAndRender('run'); };
+                tabTotal.onclick = async () => { setActive('total'); await loadAndRender('total'); };
 
                 // По умолчанию показываем «За всё время»
                 setActive('total');
-                const cats = document.getElementById('catsWait');
-                let t = setTimeout(() => { if (cats) cats.style.display = 'block'; }, 300);
-                try {
-                    const data = await getLeaderboardTopTotal();
-                    render(data, 'total');
-                } finally {
-                    clearTimeout(t);
-                    if (cats) cats.style.display = 'none';
-                }
+                await loadAndRender('total');
             } catch (error) {
                 console.error('[showLeaderboard] Ошибка при показе лидерборда:', error);
                 const leaderboardList = document.getElementById('leaderboardList');
