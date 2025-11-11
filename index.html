@@ -1014,7 +1014,7 @@
                             value = Math.max(value || 0, optimisticValue);
                         }
                         li.style.color = '#e0e0e0';
-                        li.textContent = `${i + 1}. ${username} — ${value} ${suffix}` + ((optimisticMyId && item.telegram_id === optimisticMyId && syncing) ? ' (синхронизируем…)': '');
+                        li.textContent = `${i + 1}. ${username} — ${value} ${suffix}` + ((optimisticMyId && item.telegram_id === optimisticMyId && syncing) ? ' (Кеша сверяет счёт…)': '');
                         leaderboardList.appendChild(li);
                     }
                 };
