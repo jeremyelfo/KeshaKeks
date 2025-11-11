@@ -59,6 +59,12 @@
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
             color: #ffffff;
             text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
         }
 
 
@@ -939,20 +945,29 @@
         async function showLeaderboard() {
             console.log('[showLeaderboard] Открытие лидерборда');
             
-            // Сохраняем и ждём завершения (без искусственных задержек)
-            const user = tg.initDataUnsafe?.user;
-            if (user && supabaseClient && score > 0) {
-                if (saveTimeout) clearTimeout(saveTimeout);
-                try {
-                    await updateScores(user.id, user.username || 'anon', runScore, score);
-                } catch (e) {
-                    console.error('[showLeaderboard] Save error:', e);
-                }
-            }
-            
             try {
                 const leaderboardModal = document.getElementById('leaderboardModal');
                 const leaderboardList = document.getElementById('leaderboardList');
+                
+                // Открываем модалку с индикатором загрузки СРАЗУ
+                leaderboardList.innerHTML = '<li style="color: #b0b0b0; text-align: center; padding: 20px 0;">Сохранение результатов...</li>';
+                leaderboardModal.classList.add('show');
+                leaderboardModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            
+                // Сохраняем и ждём завершения (без искусственных задержек)
+                const user = tg.initDataUnsafe?.user;
+                if (user && supabaseClient && score > 0) {
+                    if (saveTimeout) clearTimeout(saveTimeout);
+                    try {
+                        await updateScores(user.id, user.username || 'anon', runScore, score);
+                    } catch (e) {
+                        console.error('[showLeaderboard] Save error:', e);
+                    }
+                }
+                
+                // Теперь загружаем данные
+                leaderboardList.innerHTML = '<li style="color: #b0b0b0;">Загрузка...</li>';
                 const tabRun = document.getElementById('tabRun');
                 const tabTotal = document.getElementById('tabTotal');
                 if (!leaderboardModal || !leaderboardList || !tabRun || !tabTotal) {
@@ -989,11 +1004,6 @@
                         leaderboardList.appendChild(li);
                     });
                 };
-
-                leaderboardList.innerHTML = '<li style="color: #b0b0b0;">Загрузка...</li>';
-                leaderboardModal.classList.add('show');
-                leaderboardModal.setAttribute('aria-hidden', 'false');
-                document.body.classList.add('has-modal');
 
                 // Лёгкий режим чекбокс
                 const chk = document.getElementById('lightModeToggle');
