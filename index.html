@@ -987,13 +987,32 @@
                         tabRun.classList.remove('is-active'); tabRun.setAttribute('aria-selected','false');
                     }
                 };
-                const render = (data, mode) => {
+                // Эффект побуквенной печати (как в Матрице)
+                const typeText = (element, text, speed = 15) => {
+                    return new Promise((resolve) => {
+                        let charIndex = 0;
+                        element.textContent = '';
+                        const interval = setInterval(() => {
+                            if (charIndex < text.length) {
+                                element.textContent += text[charIndex];
+                                charIndex++;
+                            } else {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        }, speed);
+                    });
+                };
+                
+                const render = async (data, mode) => {
                     // Сначала затухание
                     leaderboardList.classList.add('fading');
                     
-                    // Через 200мс меняем контент и появляемся
-                    setTimeout(() => {
+                    // Через 200мс начинаем печать
+                    setTimeout(async () => {
                         leaderboardList.innerHTML = '';
+                        leaderboardList.classList.remove('fading');
+                        
                         if (!data || data.length === 0) {
                             const li = document.createElement('li');
                             li.textContent = 'Пока нет рекордов';
@@ -1001,19 +1020,35 @@
                             li.style.textAlign = 'center';
                             li.style.padding = '20px 0';
                             leaderboardList.appendChild(li);
-                        } else {
-                            data.forEach((item, index) => {
-                                const li = document.createElement('li');
-                                if (mode === 'run') {
-                                    li.textContent = `${index + 1}. ${item.username || 'Аноним'} — ${item.max_score} очков за заход`;
-                                } else {
-                                    li.textContent = `${index + 1}. ${item.username || 'Аноним'} — ${item.total_score} всего`;
-                                }
-                                leaderboardList.appendChild(li);
-                            });
+                            return;
                         }
-                        // Убираем fading - контент плавно появится
-                        leaderboardList.classList.remove('fading');
+                        
+                        // Печатаем никнеймы побуквенно
+                        const items = [];
+                        for (let i = 0; i < data.length; i++) {
+                            const item = data[i];
+                            const li = document.createElement('li');
+                            const username = item.username || 'Аноним';
+                            const prefix = `${i + 1}. `;
+                            
+                            li.style.color = '#e0e0e0';
+                            leaderboardList.appendChild(li);
+                            items.push({ li, item, username, prefix });
+                            
+                            // Печатаем номер + никнейм
+                            await typeText(li, prefix + username, 8);
+                        }
+                        
+                        // Теперь добавляем очки (к этому моменту данные уже точно пришли)
+                        for (const { li, item } of items) {
+                            const score = mode === 'run' ? item.max_score : item.total_score;
+                            const scoreText = mode === 'run' 
+                                ? ` — ${score} очков за заход`
+                                : ` — ${score} всего`;
+                            
+                            const currentText = li.textContent;
+                            await typeText(li, currentText + scoreText, 8);
+                        }
                     }, 200);
                 };
 
