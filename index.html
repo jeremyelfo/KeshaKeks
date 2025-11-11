@@ -196,7 +196,8 @@
             --ach-scale: 1;
             /* Геометрия большой кнопки (зоны тапа) */
             --tap-height: 280px;
-            --tap-bottom: 64px;
+            /* Единый зазор сверху и снизу для зоны тапа */
+            --tap-gap: 12px;
         }
 
 
@@ -313,8 +314,8 @@
         .content-wrapper {
             /* Опускаем контент ниже заголовка и нового блока ачивок (2 ряда) */
             padding-top: calc(env(safe-area-inset-top, 20px) + 200px);
-            /* Небольшой нижний отступ, т.к. тач-зона теперь в потоке и липнет к низу */
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+            /* Небольшой нижний отступ + зазор зоны тапа + безопасная зона */
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tap-gap) + 24px);
             max-width: 90%;
             margin: 0 auto;
         }
@@ -327,10 +328,10 @@
             /* Липкая зона тапа в потоке, чтобы не перекрывать контент */
             display: block;
             position: sticky;
-            bottom: calc(var(--tap-bottom) + env(safe-area-inset-bottom, 0px));
+            bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tap-gap));
             height: var(--tap-height);
             width: 100%;
-            margin: 12px 0 0 0;
+            margin: var(--tap-gap) 0 0 0;
 
             /* Apple glass — лёгкий, с оттенком цвета приложения */
             background:
@@ -621,17 +622,17 @@
         /* Адаптив для невысоких экранов */
         @media (max-height: 780px) {
             .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 170px); }
-            :root { --ach-scale: 0.9; --cat-size: 130px; --tap-height: 240px; --tap-bottom: 48px; }
+            :root { --ach-scale: 0.9; --cat-size: 130px; --tap-height: 240px; --tap-gap: 14px; }
         }
         @media (max-height: 640px) {
             .content-wrapper { padding-top: calc(env(safe-area-inset-top, 12px) + 140px); }
-            :root { --ach-scale: 0.85; --cat-size: 110px; --tap-height: 200px; --tap-bottom: 40px; }
+            :root { --ach-scale: 0.85; --cat-size: 110px; --tap-height: 200px; --tap-gap: 12px; }
             body { overflow: auto; }
         }
         /* Адаптив для узких экранов (iPhone 12 и схожие ширины) */
         @media (max-width: 400px) {
             .content-wrapper { padding-top: calc(env(safe-area-inset-top, 16px) + 170px); }
-            :root { --ach-scale: 0.92; --cat-size: 130px; --tap-height: 180px; --tap-bottom: 36px; }
+            :root { --ach-scale: 0.92; --cat-size: 130px; --tap-height: 180px; --tap-gap: 12px; }
             body { overflow: auto; }
             .primary-btn { min-height: 40px; font-size: 14px; padding: 0 18px; }
         }
@@ -1969,9 +1970,10 @@
                 const bottoms = els.map(el => el.getBoundingClientRect().bottom);
                 const bottomMost = Math.max.apply(null, bottoms);
                 const viewportH = window.innerHeight || document.documentElement.clientHeight;
-                const tapBottom = getCssVarPx('--tap-bottom', 48);
+                const tapGap = getCssVarPx('--tap-gap', 12);
                 const desiredTapTop = bottomMost + gap;
-                const available = Math.max(120, viewportH - tapBottom - desiredTapTop);
+                const safeGuess = 24; // приблизительная нижняя safe area (iOS)
+                const available = Math.max(120, viewportH - (tapGap + safeGuess) - desiredTapTop);
                 const maxH = Math.min(260, Math.round(viewportH * 0.34));
                 const minH = 120; // минимальная высота, чтобы было удобно жать
                 const newH = Math.max(minH, Math.min(maxH, available));
