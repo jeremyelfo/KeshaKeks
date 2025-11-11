@@ -951,13 +951,6 @@
         async function showLeaderboard() {
             console.log('[showLeaderboard] Открытие лидерборда');
             
-            // Сохраняем скор параллельно (анимация скроет задержку)
-            const user = tg.initDataUnsafe?.user;
-            if (user && supabaseClient && score > 0) {
-                if (saveTimeout) clearTimeout(saveTimeout);
-                updateScores(user.id, user.username || 'anon', runScore, score).catch(() => {});
-            }
-            
             try {
                 const leaderboardModal = document.getElementById('leaderboardModal');
                 const leaderboardList = document.getElementById('leaderboardList');
@@ -966,6 +959,18 @@
                 if (!leaderboardModal || !leaderboardList || !tabRun || !tabTotal) {
                     console.error('[showLeaderboard] Элементы модального окна не найдены');
                     return;
+                }
+                
+                // Открываем модалку сразу (анимация разворачивания сработает)
+                leaderboardModal.classList.add('show');
+                leaderboardModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+                
+                // Сохраняем скор параллельно (анимация скроет задержку)
+                const user = tg.initDataUnsafe?.user;
+                if (user && supabaseClient && score > 0) {
+                    if (saveTimeout) clearTimeout(saveTimeout);
+                    updateScores(user.id, user.username || 'anon', runScore, score).catch(() => {});
                 }
                 const setActive = (mode) => {
                     if (mode === 'run') {
