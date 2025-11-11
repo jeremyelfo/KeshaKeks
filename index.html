@@ -128,12 +128,6 @@
             text-align: left;
             max-height: 300px;
             overflow-y: auto;
-            opacity: 1;
-            transition: opacity 0.2s ease;
-        }
-        
-        #leaderboardList.fading {
-            opacity: 0;
         }
 
         #leaderboardList li {
@@ -988,7 +982,7 @@
                     }
                 };
                 // Эффект побуквенной печати (как в Матрице)
-                const typeText = (element, text, speed = 15) => {
+                const typeText = (element, text, speed = 16) => {
                     return new Promise((resolve) => {
                         let charIndex = 0;
                         element.textContent = '';
@@ -1005,51 +999,45 @@
                 };
                 
                 const render = async (data, mode) => {
-                    // Сначала затухание
-                    leaderboardList.classList.add('fading');
+                    // Сразу очищаем таблицу - никаких затуханий
+                    leaderboardList.innerHTML = '';
                     
-                    // Через 200мс начинаем печать
-                    setTimeout(async () => {
-                        leaderboardList.innerHTML = '';
-                        leaderboardList.classList.remove('fading');
+                    if (!data || data.length === 0) {
+                        const li = document.createElement('li');
+                        li.textContent = 'Пока нет рекордов';
+                        li.style.color = '#b0b0b0';
+                        li.style.textAlign = 'center';
+                        li.style.padding = '20px 0';
+                        leaderboardList.appendChild(li);
+                        return;
+                    }
+                    
+                    // Печатаем никнеймы поочередно (1е место, 2е, 3е...)
+                    const items = [];
+                    for (let i = 0; i < data.length; i++) {
+                        const item = data[i];
+                        const li = document.createElement('li');
+                        const username = item.username || 'Аноним';
+                        const prefix = `${i + 1}. `;
                         
-                        if (!data || data.length === 0) {
-                            const li = document.createElement('li');
-                            li.textContent = 'Пока нет рекордов';
-                            li.style.color = '#b0b0b0';
-                            li.style.textAlign = 'center';
-                            li.style.padding = '20px 0';
-                            leaderboardList.appendChild(li);
-                            return;
-                        }
+                        li.style.color = '#e0e0e0';
+                        leaderboardList.appendChild(li);
+                        items.push({ li, item });
                         
-                        // Печатаем никнеймы побуквенно
-                        const items = [];
-                        for (let i = 0; i < data.length; i++) {
-                            const item = data[i];
-                            const li = document.createElement('li');
-                            const username = item.username || 'Аноним';
-                            const prefix = `${i + 1}. `;
-                            
-                            li.style.color = '#e0e0e0';
-                            leaderboardList.appendChild(li);
-                            items.push({ li, item, username, prefix });
-                            
-                            // Печатаем номер + никнейм
-                            await typeText(li, prefix + username, 8);
-                        }
+                        // Печатаем номер + никнейм побуквенно
+                        await typeText(li, prefix + username, 16);
+                    }
+                    
+                    // Теперь добавляем очки поочередно (1е место, 2е, 3е...)
+                    for (const { li, item } of items) {
+                        const score = mode === 'run' ? item.max_score : item.total_score;
+                        const scoreText = mode === 'run' 
+                            ? ` — ${score} очков за заход`
+                            : ` — ${score} всего`;
                         
-                        // Теперь добавляем очки (к этому моменту данные уже точно пришли)
-                        for (const { li, item } of items) {
-                            const score = mode === 'run' ? item.max_score : item.total_score;
-                            const scoreText = mode === 'run' 
-                                ? ` — ${score} очков за заход`
-                                : ` — ${score} всего`;
-                            
-                            const currentText = li.textContent;
-                            await typeText(li, currentText + scoreText, 8);
-                        }
-                    }, 200);
+                        const currentText = li.textContent;
+                        await typeText(li, currentText + scoreText, 16);
+                    }
                 };
 
                 // Лёгкий режим чекбокс
