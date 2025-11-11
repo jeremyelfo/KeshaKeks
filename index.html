@@ -640,6 +640,25 @@
         /* iPhone Plus/Max ширины (414px) — немного сокращаем высоту и зазор */
         @media (min-width: 410px) and (max-width: 430px) {
             :root { --tap-height: 190px; --tap-gap: 10px; }
+            .content-wrapper { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tap-gap)); }
+        }
+        
+        /* Профиль для iPhone SE (320px ширина) и подобных узких окон */
+        @media (max-width: 340px) {
+            :root { --ach-scale: 0.80; --cat-size: 96px; --tap-height: 150px; --tap-gap: 8px; }
+            body { overflow: auto; }
+            .achievement-grid { gap: 3px; padding: 0 8px; }
+            .achievements-bar { top: calc(env(safe-area-inset-top, 8px) + 64px); }
+            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 8px) + 150px); }
+            h1 { font-size: 20px; margin-bottom: 6px; }
+            #score { font-size: 16px; margin: 10px 0; }
+            .primary-btn { min-height: 36px; font-size: 14px; padding: 0 14px; }
+        }
+        /* Очень невысокие окна (встроенное окно в Telegram на SE/5) */
+        @media (max-height: 560px) {
+            :root { --tap-height: 140px; --tap-gap: 6px; --cat-size: 90px; }
+            .content-wrapper { padding-top: calc(env(safe-area-inset-top, 8px) + 140px); }
+            body { overflow: auto; }
         }
     </style>
 
