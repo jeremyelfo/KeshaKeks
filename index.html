@@ -313,8 +313,8 @@
         .content-wrapper {
             /* Опускаем контент ниже заголовка и нового блока ачивок (2 ряда) */
             padding-top: calc(env(safe-area-inset-top, 20px) + 200px);
-            /* Отступ снизу = высота зоны тапа + нижний отступ + безопасная зона + запас */
-            padding-bottom: calc(var(--tap-height) + var(--tap-bottom) + env(safe-area-inset-bottom, 0px) + 40px);
+            /* Небольшой нижний отступ, т.к. тач-зона теперь в потоке и липнет к низу */
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
             max-width: 90%;
             margin: 0 auto;
         }
@@ -324,13 +324,13 @@
         /* --- НОВАЯ БОЛЬШАЯ КНОПКА (TAP ZONE) --- */
 
         .tap-zone {
-            /* Фиксированная геометрия */
+            /* Липкая зона тапа в потоке, чтобы не перекрывать контент */
             display: block;
-            position: fixed;
-            left: 16px;
-            right: 16px;
+            position: sticky;
             bottom: calc(var(--tap-bottom) + env(safe-area-inset-bottom, 0px));
             height: var(--tap-height);
+            width: 100%;
+            margin: 12px 0 0 0;
 
             /* Apple glass — лёгкий, с оттенком цвета приложения */
             background:
@@ -733,12 +733,11 @@
         <button id="showLeaderboardBtn" class="primary-btn" onclick="showLeaderboard()">🏆 Показать топ</button>
 
         <p class="subtitle-one">Котики мурлычут в унисон! Гладь котиков! 😻</p>
-
+        <button id="tapZone" class="tap-zone" aria-label="Большая кнопка для тапов"></button>
     </div>
 
 
 
-    <button id="tapZone" class="tap-zone" aria-label="Большая кнопка для тапов"></button>
 
 
 
@@ -1972,7 +1971,7 @@
                 const desiredTapTop = bottomMost + gap;
                 const available = Math.max(120, viewportH - tapBottom - desiredTapTop);
                 const maxH = Math.min(280, Math.round(viewportH * 0.38));
-                const minH = 160; // минимальная высота, чтобы было удобно жать
+                const minH = 140; // минимальная высота, чтобы было удобно жать
                 const newH = Math.max(minH, Math.min(maxH, available));
                 setCssVar('--tap-height', newH + 'px');
                 // Обновим нижний паддинг контента (зависит от --tap-height через CSS)
