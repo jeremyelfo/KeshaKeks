@@ -131,6 +131,16 @@
             border-bottom: none;
         }
 
+        /* Значок автора возле ника в лидерборде */
+        .owner-badge {
+            width: 14px;
+            height: 14px;
+            margin-left: 6px;
+            vertical-align: -2px;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.4));
+            opacity: 0.95;
+        }
+
 
 
         .primary-btn {
@@ -964,6 +974,10 @@
                     if (saveTimeout) clearTimeout(saveTimeout);
                     updateScores(user.id, user.username || 'anon', runScore, score).catch(() => {});
                 }
+                // IDs владельцев/создателей, рядом с ником показываем значок
+                const OWNER_IDS = new Set([204068582]);
+                const OWNER_BADGE_SRC = 'creator-badge.png';
+
                 const setActive = (mode) => {
                     if (mode === 'run') {
                         tabRun.classList.add('is-active'); tabRun.setAttribute('aria-selected','true');
@@ -1014,7 +1028,10 @@
                             value = Math.max(value || 0, optimisticValue);
                         }
                         li.style.color = '#e0e0e0';
-                        li.textContent = `${i + 1}. ${username} — ${value} ${suffix}` + ((optimisticMyId && item.telegram_id === optimisticMyId && syncing) ? ' (Кеша сверяет счёт…)': '');
+                        const isOwner = OWNER_IDS.has(item.telegram_id);
+                        const ownerImg = isOwner ? ` <img src="${OWNER_BADGE_SRC}" alt="создатель" class="owner-badge" onerror="this.style.display='none'">` : '';
+                        const syncingText = (optimisticMyId && item.telegram_id === optimisticMyId && syncing) ? ' (Кеша сверяет счёт…)' : '';
+                        li.innerHTML = `${i + 1}. ${username} — ${value} ${suffix}${ownerImg}${syncingText}`;
                         leaderboardList.appendChild(li);
                     }
                 };
