@@ -978,6 +978,15 @@
                 const OWNER_IDS = new Set([204068582]);
                 const OWNER_BADGE_SRC = 'creator-badge.gif';
 
+                // Удаляем эмодзи и любые запрещённые символы из отображаемого никнейма
+                const sanitizeUsername = (u) => {
+                    try {
+                        const s = (u || '').normalize('NFC');
+                        const cleaned = s.replace(/[^A-Za-zА-Яа-яЁё0-9_-]/g, '');
+                        return cleaned || 'Аноним';
+                    } catch { return 'Аноним'; }
+                };
+
                 const setActive = (mode) => {
                     if (mode === 'run') {
                         tabRun.classList.add('is-active'); tabRun.setAttribute('aria-selected','true');
@@ -1029,9 +1038,10 @@
                         }
                         li.style.color = '#e0e0e0';
                         const isOwner = OWNER_IDS.has(item.telegram_id);
-                        const ownerImg = isOwner ? `<img src="${OWNER_BADGE_SRC}" alt="создатель" class="owner-badge" onerror="this.style.display='none'">` : '';
+                        const ownerImg = isOwner ? `<img src=\"${OWNER_BADGE_SRC}\" alt=\"создатель\" class=\"owner-badge\" onerror=\"this.style.display='none'\">` : '';
                         const syncingText = (optimisticMyId && item.telegram_id === optimisticMyId && syncing) ? ' (Кеша сверяет счёт…)' : '';
-                        li.innerHTML = `${i + 1}. ${ownerImg}${username} — ${value} ${suffix}${syncingText}`;
+                        const safeName = sanitizeUsername(username);
+                        li.innerHTML = `${i + 1}. ${ownerImg}${safeName} — ${value} ${suffix}${syncingText}`;
                         leaderboardList.appendChild(li);
                     }
                 };
