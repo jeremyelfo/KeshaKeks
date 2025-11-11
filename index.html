@@ -331,7 +331,8 @@
             bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tap-gap));
             height: var(--tap-height);
             width: 100%;
-            margin: var(--tap-gap) 0 0 0;
+            /* Симметричный зазор: учитываем safe-area и сверху тоже */
+            margin: calc(var(--tap-gap) + env(safe-area-inset-bottom, 0px)) 0 0 0;
 
             /* Apple glass — лёгкий, с оттенком цвета приложения */
             background:
