@@ -702,12 +702,12 @@
 
     </div>
 
-    <!-- Debug Console -->
-    <div id="debugConsole" style="position:fixed;bottom:60px;left:10px;right:10px;max-height:200px;background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:8px;overflow-y:auto;z-index:9999;display:none;">
+    <!-- Debug Console (hidden) -->
+    <div id="debugConsole" style="position:fixed;bottom:60px;left:10px;right:10px;max-height:200px;background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:8px;overflow-y:auto;z-index:9999;display:none;pointer-events:none;visibility:hidden;">
         <button onclick="document.getElementById('debugConsole').style.display='none'" style="position:absolute;top:5px;right:5px;background:#f00;color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;">✕</button>
         <div id="debugLog"></div>
     </div>
-    <button onclick="document.getElementById('debugConsole').style.display='block'" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.7);color:#0f0;border:2px solid #0f0;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer;z-index:9998;">🐛</button>
+    <button onclick="document.getElementById('debugConsole').style.display='block'" style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.7);color:#0f0;border:2px solid #0f0;border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer;z-index:9998;display:none;pointer-events:none;visibility:hidden;">🐛</button>
 
 
 
@@ -938,6 +938,26 @@
 
         async function showLeaderboard() {
             console.log('[showLeaderboard] Открытие лидерборда');
+            
+            // Принудительно сохраняем счёт перед открытием
+            const user = tg.initDataUnsafe?.user;
+            if (user && supabaseClient && score > 0) {
+                debugLog('[showLeaderboard] Сохранение перед открытием...');
+                // Отменяем debounce
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = null;
+                }
+                // Сохраняем и ждём завершения
+                try {
+                    await updateScores(user.id, user.username || 'anon', runScore, score);
+                    // Ждём ещё 50ms чтобы БД точно обновилась
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                } catch (e) {
+                    console.error('[showLeaderboard] Ошибка сохранения:', e);
+                }
+            }
+            
             try {
                 const leaderboardModal = document.getElementById('leaderboardModal');
                 const leaderboardList = document.getElementById('leaderboardList');
